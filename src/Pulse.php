@@ -1,20 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace bordersdev\craftpulse;
 
-use Craft;
 use bordersdev\craftpulse\models\Settings;
+use bordersdev\craftpulse\services\HealthService;
+use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\events\RegisterUrlRulesEvent;
+use craft\web\UrlManager;
+use yii\base\Event;
 
 /**
- * pulse plugin
- *
  * @method static Pulse getInstance()
  * @method Settings getSettings()
- * @author borders-dev <plugins@borders.dev>
- * @copyright borders-dev
- * @license MIT
+ * @property-read HealthService $health
  */
 class Pulse extends Plugin
 {
@@ -25,7 +27,7 @@ class Pulse extends Plugin
     {
         return [
             'components' => [
-                // Define component configs here...
+                'health' => HealthService::class,
             ],
         ];
     }
@@ -34,10 +36,8 @@ class Pulse extends Plugin
     {
         parent::init();
 
-        // Defer most setup tasks until Craft is fully initialized
         Craft::$app->onInit(function() {
-            $this->attachEventHandlers();
-            // ...
+            $this->registerRoutes();
         });
     }
 
@@ -54,9 +54,17 @@ class Pulse extends Plugin
         ]);
     }
 
-    private function attachEventHandlers(): void
+    private function registerRoutes(): void
     {
-        // Register event handlers here ...
-        // (see https://craftcms.com/docs/4.x/extend/events.html to get started)
+        $settings = $this->getSettings();
+        $endpointPath = $settings->endpointPath;
+
+        Event::on(
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_SITE_URL_RULES,
+            function(RegisterUrlRulesEvent $event) use ($endpointPath) {
+                $event->rules[$endpointPath] = 'pulse/health/index';
+            }
+        );
     }
 }

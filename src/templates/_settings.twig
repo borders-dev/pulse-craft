@@ -3,4 +3,82 @@
 
 {% import '_includes/forms.twig' as forms %}
 
-{# ... #}
+{{ forms.autosuggestField({
+    label: 'Secret Key',
+    instructions: 'The secret key used to authenticate health check requests. Can be set via the `PULSE_SECRET_KEY` environment variable.',
+    id: 'secretKey',
+    name: 'secretKey',
+    value: settings.secretKey,
+    suggestEnvVars: true,
+    required: true,
+}) }}
+
+{{ forms.textField({
+    label: 'Endpoint Path',
+    instructions: 'The URL path for the health check endpoint (e.g., `health` for `/health`).',
+    id: 'endpointPath',
+    name: 'endpointPath',
+    value: settings.endpointPath,
+    required: true,
+}) }}
+
+<hr>
+
+<h2>Thresholds</h2>
+
+{{ forms.textField({
+    label: 'Disk Space Threshold',
+    instructions: 'Alert when disk usage exceeds this percentage.',
+    id: 'diskSpaceThreshold',
+    name: 'diskSpaceThreshold',
+    value: settings.diskSpaceThreshold,
+    type: 'number',
+    min: 1,
+    max: 100,
+    size: 5,
+    unit: '%',
+}) }}
+
+{{ forms.textField({
+    label: 'Queue Stuck Threshold',
+    instructions: 'Consider a job stuck if it has been in the queue longer than this many seconds.',
+    id: 'queueStuckThreshold',
+    name: 'queueStuckThreshold',
+    value: settings.queueStuckThreshold,
+    type: 'number',
+    min: 60,
+    size: 10,
+    unit: 'seconds',
+}) }}
+
+{{ forms.textField({
+    label: 'Failed Login Window',
+    instructions: 'Time window for counting failed login attempts.',
+    id: 'failedLoginWindow',
+    name: 'failedLoginWindow',
+    value: settings.failedLoginWindow,
+    type: 'number',
+    min: 60,
+    size: 10,
+    unit: 'seconds',
+}) }}
+
+<hr>
+
+<h2>Enabled Checks</h2>
+
+{{ forms.checkboxField({
+    label: 'Database',
+    instructions: 'Check database connectivity and response time.',
+    id: 'enabledChecks-database',
+    name: 'enabledChecks[database]',
+    checked: settings.enabledChecks.database ?? true,
+}) }}
+
+{{ forms.checkboxField({
+    label: 'Queue',
+    instructions: 'Monitor queue jobs, stuck jobs, and failed jobs.',
+    id: 'enabledChecks-queue',
+    name: 'enabledChecks[queue]',
+    checked: settings.enabledChecks.queue ?? true,
+}) }}
