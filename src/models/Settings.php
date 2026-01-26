@@ -24,6 +24,8 @@ class Settings extends Model
         'debugMode' => true,
         'failedLogins' => true,
         'license' => true,
+        'environment' => true,
+        'forms' => true,
     ];
 
     public function getSecretKey(): ?string

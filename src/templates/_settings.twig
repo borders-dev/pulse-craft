@@ -148,3 +148,23 @@
     name: 'enabledChecks[license]',
     checked: settings.enabledChecks.license ?? true,
 }) }}
+
+<h3>Configuration</h3>
+
+{{ forms.checkboxField({
+    label: 'Environment Variables',
+    instructions: 'Check for missing environment variables referenced in config files.',
+    id: 'enabledChecks-environment',
+    name: 'enabledChecks[environment]',
+    checked: settings.enabledChecks.environment ?? true,
+}) }}
+
+<h3>Integrations</h3>
+
+{{ forms.checkboxField({
+    label: 'Form Plugins',
+    instructions: 'Monitor Formie and Freeform for failed email notifications.',
+    id: 'enabledChecks-forms',
+    name: 'enabledChecks[forms]',
+    checked: settings.enabledChecks.forms ?? true,
+}) }}
