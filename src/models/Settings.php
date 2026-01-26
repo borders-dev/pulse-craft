@@ -17,6 +17,13 @@ class Settings extends Model
     public array $enabledChecks = [
         'database' => true,
         'queue' => true,
+        'disk' => true,
+        'memory' => true,
+        'craftVersion' => true,
+        'plugins' => true,
+        'debugMode' => true,
+        'failedLogins' => true,
+        'license' => true,
     ];
 
     public function getSecretKey(): ?string

@@ -67,6 +67,8 @@
 
 <h2>Enabled Checks</h2>
 
+<h3>Core</h3>
+
 {{ forms.checkboxField({
     label: 'Database',
     instructions: 'Check database connectivity and response time.',
@@ -81,4 +83,68 @@
     id: 'enabledChecks-queue',
     name: 'enabledChecks[queue]',
     checked: settings.enabledChecks.queue ?? true,
+}) }}
+
+<h3>System</h3>
+
+{{ forms.checkboxField({
+    label: 'Disk Space',
+    instructions: 'Monitor disk usage on the storage volume.',
+    id: 'enabledChecks-disk',
+    name: 'enabledChecks[disk]',
+    checked: settings.enabledChecks.disk ?? true,
+}) }}
+
+{{ forms.checkboxField({
+    label: 'Memory',
+    instructions: 'Monitor PHP memory usage.',
+    id: 'enabledChecks-memory',
+    name: 'enabledChecks[memory]',
+    checked: settings.enabledChecks.memory ?? true,
+}) }}
+
+<h3>Updates</h3>
+
+{{ forms.checkboxField({
+    label: 'Craft Version',
+    instructions: 'Check if Craft CMS is up to date.',
+    id: 'enabledChecks-craftVersion',
+    name: 'enabledChecks[craftVersion]',
+    checked: settings.enabledChecks.craftVersion ?? true,
+}) }}
+
+{{ forms.checkboxField({
+    label: 'Plugin Versions',
+    instructions: 'Check if installed plugins are up to date.',
+    id: 'enabledChecks-plugins',
+    name: 'enabledChecks[plugins]',
+    checked: settings.enabledChecks.plugins ?? true,
+}) }}
+
+<h3>Security</h3>
+
+{{ forms.checkboxField({
+    label: 'Debug Mode',
+    instructions: 'Alert if dev mode is enabled.',
+    id: 'enabledChecks-debugMode',
+    name: 'enabledChecks[debugMode]',
+    checked: settings.enabledChecks.debugMode ?? true,
+}) }}
+
+{{ forms.checkboxField({
+    label: 'Failed Logins',
+    instructions: 'Monitor failed login attempts.',
+    id: 'enabledChecks-failedLogins',
+    name: 'enabledChecks[failedLogins]',
+    checked: settings.enabledChecks.failedLogins ?? true,
+}) }}
+
+<h3>Licensing</h3>
+
+{{ forms.checkboxField({
+    label: 'License Status',
+    instructions: 'Check Craft and plugin license validity.',
+    id: 'enabledChecks-license',
+    name: 'enabledChecks[license]',
+    checked: settings.enabledChecks.license ?? true,
 }) }}

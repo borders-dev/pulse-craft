@@ -6,7 +6,14 @@ namespace bordersdev\craftpulse\services;
 
 use bordersdev\craftpulse\checks\CheckInterface;
 use bordersdev\craftpulse\checks\CheckResult;
+use bordersdev\craftpulse\checks\CraftVersionCheck;
 use bordersdev\craftpulse\checks\DatabaseCheck;
+use bordersdev\craftpulse\checks\DebugModeCheck;
+use bordersdev\craftpulse\checks\DiskSpaceCheck;
+use bordersdev\craftpulse\checks\FailedLoginsCheck;
+use bordersdev\craftpulse\checks\LicenseCheck;
+use bordersdev\craftpulse\checks\MemoryCheck;
+use bordersdev\craftpulse\checks\PluginVersionsCheck;
 use bordersdev\craftpulse\checks\QueueCheck;
 use bordersdev\craftpulse\Pulse;
 use yii\base\Component;
@@ -22,6 +29,13 @@ class HealthService extends Component
 
         $this->registerCheck(new DatabaseCheck());
         $this->registerCheck(new QueueCheck());
+        $this->registerCheck(new DiskSpaceCheck());
+        $this->registerCheck(new MemoryCheck());
+        $this->registerCheck(new CraftVersionCheck());
+        $this->registerCheck(new PluginVersionsCheck());
+        $this->registerCheck(new DebugModeCheck());
+        $this->registerCheck(new FailedLoginsCheck());
+        $this->registerCheck(new LicenseCheck());
     }
 
     public function registerCheck(CheckInterface $check): void
