@@ -20,8 +20,8 @@ use yii\base\Event;
  */
 class Pulse extends Plugin
 {
-    public string $schemaVersion = '1.0.0';
-    public bool $hasCpSettings = true;
+    public $schemaVersion = '1.0.0';
+    public $hasCpSettings = true;
 
     public static function config(): array
     {
@@ -36,9 +36,17 @@ class Pulse extends Plugin
     {
         parent::init();
 
-        Craft::$app->onInit(function() {
+        $this->setComponents([
+            'health' => HealthService::class,
+        ]);
+
+        if (method_exists(Craft::$app, 'onInit')) {
+            Craft::$app->onInit(function() {
+                $this->registerRoutes();
+            });
+        } else {
             $this->registerRoutes();
-        });
+        }
     }
 
     protected function createSettingsModel(): ?Model

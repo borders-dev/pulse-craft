@@ -30,7 +30,12 @@ class Settings extends Model
 
     public function getSecretKey(): ?string
     {
-        return Craft::parseEnv($this->secretKey) ?: Craft::parseEnv('$PULSE_SECRET_KEY');
+        if ($this->secretKey) {
+            return Craft::parseEnv($this->secretKey);
+        }
+
+        $envKey = getenv('PULSE_SECRET_KEY');
+        return $envKey !== false ? $envKey : null;
     }
 
     public function rules(): array

@@ -1,5 +1,13 @@
 # Release Notes for Pulse
 
+## 0.2.1
+- Remove type declarations from plugin properties for Craft 3 compatibility
+- Remove type declaration from `$allowAnonymous` controller property for Craft 3 compatibility
+- Add `method_exists()` check for `onInit()` (not available in Craft 3)
+- Use `setComponents()` for Craft 3 component registration compatibility
+- Fix `getSecretKey()` to properly detect missing env var
+- Improve error messages for authentication failures
+
 ## 0.2.0
 - Add Craft 3.7+ support
 - Add `method_exists()` check for `getLicensedEdition()` (not available in Craft 3)

@@ -11,7 +11,7 @@ use yii\web\Response;
 
 class HealthController extends Controller
 {
-    protected array|bool|int $allowAnonymous = ['index'];
+    protected $allowAnonymous = ['index'];
 
     public function beforeAction($action): bool
     {
@@ -19,13 +19,16 @@ class HealthController extends Controller
             return false;
         }
 
-        if ($action->id === 'index' && !$this->validateSecretKey()) {
-            Craft::$app->getResponse()->setStatusCode(401);
-            Craft::$app->getResponse()->data = Craft::$app->getResponse()->content = json_encode([
-                'error' => 'Unauthorized',
-            ]);
-            Craft::$app->getResponse()->format = Response::FORMAT_JSON;
-            return false;
+        if ($action->id === 'index') {
+            $error = $this->validateSecretKey();
+            if ($error !== null) {
+                Craft::$app->getResponse()->setStatusCode(401);
+                Craft::$app->getResponse()->data = Craft::$app->getResponse()->content = json_encode([
+                    'error' => $error,
+                ]);
+                Craft::$app->getResponse()->format = Response::FORMAT_JSON;
+                return false;
+            }
         }
 
         return true;
@@ -47,19 +50,23 @@ class HealthController extends Controller
         return $this->asJson($healthData);
     }
 
-    private function validateSecretKey(): bool
+    private function validateSecretKey(): ?string
     {
         $settings = Pulse::getInstance()->getSettings();
         $configuredKey = $settings->getSecretKey();
 
         if (empty($configuredKey)) {
-            return false;
+            return 'PULSE_SECRET_KEY is not configured';
         }
 
         $request = Craft::$app->getRequest();
         $providedKey = $request->getHeaders()->get('X-Pulse-Key')
             ?? $request->getQueryParam('key');
 
-        return hash_equals($configuredKey, $providedKey ?? '');
+        if (empty($providedKey) || !hash_equals($configuredKey, $providedKey)) {
+            return 'Unauthorized';
+        }
+
+        return null;
     }
 }
