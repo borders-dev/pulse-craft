@@ -10,7 +10,7 @@ use craft\base\Model;
 class Settings extends Model
 {
     public ?string $secretKey = null;
-    public string $endpointPath = 'health';
+    public string $endpointPath = '_pulse/health';
     public int $diskSpaceThreshold = 90;
     public int $queueStuckThreshold = 3600;
     public int $failedLoginWindow = 86400;
