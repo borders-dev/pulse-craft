@@ -25,7 +25,7 @@
   },
   "extra": {
     "handle": "pulse",
-    "name": "pulse",
+    "name": "Pulse",
     "developer": "borders-dev",
     "documentationUrl": "https://github.com/borders-dev/pulse-craft.git",
     "class": "bordersdev\\craftpulse\\Pulse"

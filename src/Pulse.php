@@ -20,6 +20,7 @@ use yii\base\Event;
  */
 class Pulse extends Plugin
 {
+    public $name = 'Pulse';
     public $schemaVersion = '1.0.0';
     public $hasCpSettings = true;
 
