@@ -1,5 +1,9 @@
 # Release Notes for Pulse
 
+## 0.3.2
+- Only report degraded status for plugins with critical updates
+- Add OS version and database version to environment check
+
 ## 0.3.1
 - Change default endpoint from `/health` to `/_pulse/health`
 
