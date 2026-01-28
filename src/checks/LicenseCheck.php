@@ -16,7 +16,9 @@ class LicenseCheck implements CheckInterface
     public function run(): CheckResult
     {
         $licenseKeyStatus = Craft::$app->getCache()->get('licenseKeyStatus') ?? 'unknown';
-        $licensedEdition = Craft::$app->getLicensedEdition();
+        $licensedEdition = method_exists(Craft::$app, 'getLicensedEdition')
+            ? Craft::$app->getLicensedEdition()
+            : null;
         $currentEdition = Craft::$app->getEdition();
 
         $pluginLicenses = [];
