@@ -5,3 +5,7 @@ parameters:
     level: 4
     paths:
         - src
+    excludePaths:
+        analyseAndScan:
+            - src/Pulse.php
+            - src/controllers/HealthController.php

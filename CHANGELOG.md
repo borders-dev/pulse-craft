@@ -7,6 +7,7 @@
 - Use `setComponents()` for Craft 3 component registration compatibility
 - Fix `getSecretKey()` to properly detect missing env var
 - Improve error messages for authentication failures
+- Add Freeform 3 support using native Freeform APIs with error details in response
 
 ## 0.2.0
 - Add Craft 3.7+ support

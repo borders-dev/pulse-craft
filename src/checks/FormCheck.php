@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace bordersdev\craftpulse\checks;
 
+use bordersdev\craftpulse\helpers\LogParser;
 use bordersdev\craftpulse\Pulse;
 use Craft;
 use craft\db\Query;
@@ -36,7 +37,9 @@ class FormCheck implements CheckInterface
         ];
 
         $formieFailures = $formieData !== null ? (int) ($formieData['failedNotifications'] ?? 0) : 0;
-        $freeformFailures = $freeformData !== null ? (int) ($freeformData['failedNotifications'] ?? 0) : 0;
+        $freeformFailures = $freeformData !== null
+            ? (int) ($freeformData['failedNotifications'] ?? $freeformData['logErrors'] ?? 0)
+            : 0;
         $totalFailures = $formieFailures + $freeformFailures;
 
         if ($totalFailures > 10) {
@@ -85,10 +88,23 @@ class FormCheck implements CheckInterface
 
     private function checkFreeform(DateTime $since): ?array
     {
-        if (!Craft::$app->getPlugins()->isPluginInstalled(self::FREEFORM_PLUGIN)) {
+        $plugin = Craft::$app->getPlugins()->getPlugin(self::FREEFORM_PLUGIN);
+        if ($plugin === null) {
             return null;
         }
 
+        $version = $plugin->getVersion();
+        $isFreeform4Plus = version_compare($version, '4.0.0', '>=');
+
+        if ($isFreeform4Plus) {
+            return $this->checkFreeform4($since);
+        }
+
+        return $this->checkFreeform3();
+    }
+
+    private function checkFreeform4(DateTime $since): array
+    {
         try {
             $failedNotifications = (new Query())
                 ->from('{{%freeform_notifications_log}}')
@@ -100,6 +116,32 @@ class FormCheck implements CheckInterface
                 'installed' => true,
                 'failedNotifications' => (int) $failedNotifications,
             ];
+        } catch (Throwable) {
+            return [
+                'installed' => true,
+                'error' => 'Unable to query Freeform data',
+            ];
+        }
+    }
+
+    private function checkFreeform3(): array
+    {
+        try {
+            /** @phpstan-ignore-next-line */
+            $freeform = \Solspace\Freeform\Freeform::getInstance();
+            $logReader = $freeform->logger->getLogReader();
+            $errorCount = $logReader->count();
+
+            $result = [
+                'installed' => true,
+                'logErrors' => $errorCount,
+            ];
+
+            if ($errorCount > 0) {
+                $result['errors'] = LogParser::parseMany($logReader->getLastLines(20));
+            }
+
+            return $result;
         } catch (Throwable) {
             return [
                 'installed' => true,
