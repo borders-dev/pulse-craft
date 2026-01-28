@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace bordersdev\craftpulse\checks;
 
 use bordersdev\craftpulse\helpers\LogParser;
-use bordersdev\craftpulse\Pulse;
 use Craft;
 use craft\db\Query;
-use DateTime;
 use Throwable;
 
 class FormCheck implements CheckInterface
@@ -23,17 +21,12 @@ class FormCheck implements CheckInterface
 
     public function run(): CheckResult
     {
-        $settings = Pulse::getInstance()->getSettings();
-        $windowSeconds = $settings->failedLoginWindow;
-        $since = (new DateTime())->modify("-{$windowSeconds} seconds");
-
-        $formieData = $this->checkFormie($since);
-        $freeformData = $this->checkFreeform($since);
+        $formieData = $this->checkFormie();
+        $freeformData = $this->checkFreeform();
 
         $meta = [
             'formie' => $formieData,
             'freeform' => $freeformData,
-            'window' => round($windowSeconds / 3600, 1) . 'h',
         ];
 
         $formieFailures = $formieData !== null ? (int) ($formieData['failedNotifications'] ?? 0) : 0;
@@ -61,7 +54,7 @@ class FormCheck implements CheckInterface
         return CheckResult::healthy($this->getName(), $meta);
     }
 
-    private function checkFormie(DateTime $since): ?array
+    private function checkFormie(): ?array
     {
         if (!Craft::$app->getPlugins()->isPluginInstalled(self::FORMIE_PLUGIN)) {
             return null;
@@ -71,7 +64,6 @@ class FormCheck implements CheckInterface
             $failedNotifications = (new Query())
                 ->from('{{%formie_sentnotifications}}')
                 ->where(['success' => false])
-                ->andWhere(['>=', 'dateCreated', $since->format('Y-m-d H:i:s')])
                 ->count();
 
             return [
@@ -86,7 +78,7 @@ class FormCheck implements CheckInterface
         }
     }
 
-    private function checkFreeform(DateTime $since): ?array
+    private function checkFreeform(): ?array
     {
         $plugin = Craft::$app->getPlugins()->getPlugin(self::FREEFORM_PLUGIN);
         if ($plugin === null) {
@@ -97,19 +89,18 @@ class FormCheck implements CheckInterface
         $isFreeform4Plus = version_compare($version, '4.0.0', '>=');
 
         if ($isFreeform4Plus) {
-            return $this->checkFreeform4($since);
+            return $this->checkFreeform4();
         }
 
         return $this->checkFreeform3();
     }
 
-    private function checkFreeform4(DateTime $since): array
+    private function checkFreeform4(): array
     {
         try {
             $failedNotifications = (new Query())
                 ->from('{{%freeform_notifications_log}}')
                 ->where(['success' => false])
-                ->andWhere(['>=', 'dateCreated', $since->format('Y-m-d H:i:s')])
                 ->count();
 
             return [
