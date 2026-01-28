@@ -1,5 +1,8 @@
 # Release Notes for Pulse
 
+## 0.2.2
+- Change default endpoint from `/health` to `/_pulse/health`
+
 ## 0.2.1
 - Remove type declarations from plugin properties for Craft 3 compatibility
 - Remove type declaration from `$allowAnonymous` controller property for Craft 3 compatibility
@@ -8,6 +11,7 @@
 - Fix `getSecretKey()` to properly detect missing env var
 - Improve error messages for authentication failures
 - Add Freeform 3 support using native Freeform APIs with error details in response
+- Remove time window filter from form checks (report all errors)
 
 ## 0.2.0
 - Add Craft 3.7+ support
