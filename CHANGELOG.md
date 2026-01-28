@@ -1,5 +1,8 @@
 # Release Notes for Pulse
 
+## 0.3.3
+- Set plugin display name to "Pulse"
+
 ## 0.3.2
 - Only report degraded status for plugins with critical updates
 - Add OS version and database version to environment check
