@@ -1,6 +1,6 @@
 # Release Notes for Pulse
 
-## 0.2.2
+## 0.3.1
 - Change default endpoint from `/health` to `/_pulse/health`
 
 ## 0.2.1
