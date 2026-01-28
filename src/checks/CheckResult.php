@@ -11,10 +11,10 @@ class CheckResult
     public const STATUS_UNHEALTHY = 'unhealthy';
 
     public function __construct(
-        public readonly string $name,
-        public readonly string $status,
-        public readonly array $meta = [],
-        public readonly ?string $output = null,
+        public string $name,
+        public string $status,
+        public array $meta = [],
+        public ?string $output = null,
     ) {
     }
 
