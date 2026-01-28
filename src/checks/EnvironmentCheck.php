@@ -6,6 +6,7 @@ namespace bordersdev\craftpulse\checks;
 
 use Craft;
 use craft\helpers\App;
+use Throwable;
 
 class EnvironmentCheck implements CheckInterface
 {
@@ -65,6 +66,8 @@ class EnvironmentCheck implements CheckInterface
             'missing' => $missing,
             'defined' => count($defined),
             'php' => PHP_VERSION,
+            'os' => php_uname('s') . ' ' . php_uname('r'),
+            'database' => $this->getDatabaseVersion(),
         ];
 
         if (!empty($missing)) {
@@ -76,5 +79,18 @@ class EnvironmentCheck implements CheckInterface
         }
 
         return CheckResult::healthy($this->getName(), $meta);
+    }
+
+    private function getDatabaseVersion(): ?string
+    {
+        try {
+            $db = Craft::$app->getDb();
+            $version = $db->getSchema()->getServerVersion();
+            $driver = $db->getDriverName();
+
+            return $driver . ' ' . $version;
+        } catch (Throwable) {
+            return null;
+        }
     }
 }
