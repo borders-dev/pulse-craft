@@ -12,7 +12,8 @@ use bordersdev\craftpulse\checks\DebugModeCheck;
 use bordersdev\craftpulse\checks\DiskSpaceCheck;
 use bordersdev\craftpulse\checks\EnvironmentCheck;
 use bordersdev\craftpulse\checks\FailedLoginsCheck;
-use bordersdev\craftpulse\checks\FormCheck;
+use bordersdev\craftpulse\checks\FormieCheck;
+use bordersdev\craftpulse\checks\FreeformCheck;
 use bordersdev\craftpulse\checks\LicenseCheck;
 use bordersdev\craftpulse\checks\MemoryCheck;
 use bordersdev\craftpulse\checks\PluginVersionsCheck;
@@ -39,7 +40,8 @@ class HealthService extends Component
         $this->registerCheck(new FailedLoginsCheck());
         $this->registerCheck(new LicenseCheck());
         $this->registerCheck(new EnvironmentCheck());
-        $this->registerCheck(new FormCheck());
+        $this->registerCheck(new FormieCheck());
+        $this->registerCheck(new FreeformCheck());
     }
 
     public function registerCheck(CheckInterface $check): void

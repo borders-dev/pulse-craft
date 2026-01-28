@@ -1,5 +1,9 @@
 # Release Notes for Pulse
 
+## 0.4.0
+- Split combined "forms" check into separate "formie" and "freeform" checks
+- Return degraded status when form plugin data cannot be queried
+
 ## 0.3.3
 - Set plugin display name to "Pulse"
 

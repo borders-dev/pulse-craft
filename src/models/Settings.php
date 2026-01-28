@@ -25,7 +25,8 @@ class Settings extends Model
         'failedLogins' => true,
         'license' => true,
         'environment' => true,
-        'forms' => true,
+        'formie' => true,
+        'freeform' => true,
     ];
 
     public function getSecretKey(): ?string
