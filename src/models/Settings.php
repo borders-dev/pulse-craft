@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace bordersdev\craftpulse\models;
 
-use Craft;
 use craft\base\Model;
+use craft\helpers\App;
 
 class Settings extends Model
 {
@@ -32,11 +32,10 @@ class Settings extends Model
     public function getSecretKey(): ?string
     {
         if ($this->secretKey) {
-            return Craft::parseEnv($this->secretKey);
+            return App::parseEnv($this->secretKey);
         }
 
-        $envKey = getenv('PULSE_SECRET_KEY');
-        return $envKey !== false ? $envKey : null;
+        return App::env('PULSE_SECRET_KEY');
     }
 
     public function rules(): array

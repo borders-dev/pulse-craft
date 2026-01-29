@@ -1,5 +1,14 @@
 # Release Notes for Pulse
 
+## 0.5.0
+- Drop Craft 3 support (use v3 branch / 1.x releases for Craft 3)
+- Restore typed properties on plugin class and controller
+- Remove Craft 3 compatibility shims
+- Remove Freeform 3 support (Freeform 4+ only)
+- Use `App::parseEnv()` and `App::env()` instead of deprecated `Craft::parseEnv()`
+- Normalize edition values for consistent JSON output across Craft 4/5
+- Require Craft 4.0+ or 5.0+
+
 ## 0.4.0
 - Split combined "forms" check into separate "formie" and "freeform" checks
 - Return degraded status when form plugin data cannot be queried

@@ -16,10 +16,11 @@ class LicenseCheck implements CheckInterface
     public function run(): CheckResult
     {
         $licenseKeyStatus = Craft::$app->getCache()->get('licenseKeyStatus') ?? 'unknown';
-        $licensedEdition = method_exists(Craft::$app, 'getLicensedEdition')
-            ? Craft::$app->getLicensedEdition()
-            : null;
-        $currentEdition = Craft::$app->getEdition();
+        $rawLicensedEdition = Craft::$app->getLicensedEdition();
+        $rawCurrentEdition = Craft::$app->getEdition();
+
+        $licensedEdition = $rawLicensedEdition instanceof \BackedEnum ? $rawLicensedEdition->value : $rawLicensedEdition;
+        $currentEdition = $rawCurrentEdition instanceof \BackedEnum ? $rawCurrentEdition->value : $rawCurrentEdition;
 
         $pluginLicenses = [];
         foreach (Craft::$app->getPlugins()->getAllPlugins() as $handle => $plugin) {

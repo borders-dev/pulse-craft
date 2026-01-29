@@ -11,7 +11,7 @@ use yii\web\Response;
 
 class HealthController extends Controller
 {
-    protected $allowAnonymous = ['index'];
+    protected array|bool|int $allowAnonymous = ['index'];
 
     public function beforeAction($action): bool
     {
