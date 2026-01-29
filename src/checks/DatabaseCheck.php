@@ -14,7 +14,7 @@ class DatabaseCheck implements CheckInterface
         return 'database';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         $start = microtime(true);
 

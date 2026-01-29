@@ -13,7 +13,7 @@ class DebugModeCheck implements CheckInterface
         return 'debugMode';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         $devMode = Craft::$app->getConfig()->getGeneral()->devMode;
         $allowAdminChanges = Craft::$app->getConfig()->getGeneral()->allowAdminChanges;

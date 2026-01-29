@@ -16,7 +16,7 @@ class QueueCheck implements CheckInterface
         return 'queue';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         try {
             $queue = Craft::$app->getQueue();

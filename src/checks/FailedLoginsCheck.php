@@ -15,7 +15,7 @@ class FailedLoginsCheck implements CheckInterface
         return 'failedLogins';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         $settings = Pulse::getInstance()->getSettings();
         $windowSeconds = $settings->failedLoginWindow;

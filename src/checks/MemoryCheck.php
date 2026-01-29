@@ -11,7 +11,7 @@ class MemoryCheck implements CheckInterface
         return 'memory';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         $memoryLimit = $this->getMemoryLimitBytes();
         $memoryUsage = memory_get_usage(true);

@@ -13,7 +13,7 @@ class LicenseCheck implements CheckInterface
         return 'license';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         $licenseKeyStatus = Craft::$app->getCache()->get('licenseKeyStatus') ?? 'unknown';
         $rawLicensedEdition = Craft::$app->getLicensedEdition();

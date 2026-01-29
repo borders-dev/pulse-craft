@@ -14,7 +14,7 @@ class PluginVersionsCheck implements CheckInterface
         return 'plugins';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         $plugins = Craft::$app->getPlugins()->getAllPlugins();
 

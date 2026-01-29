@@ -15,10 +15,10 @@ class FormieCheck implements CheckInterface
         return 'formie';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         if (!Craft::$app->getPlugins()->isPluginInstalled('formie')) {
-            return CheckResult::healthy($this->getName(), ['installed' => false]);
+            return null;
         }
 
         try {

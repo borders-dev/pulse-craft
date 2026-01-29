@@ -14,7 +14,7 @@ class DiskSpaceCheck implements CheckInterface
         return 'disk';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         $path = Craft::getAlias('@storage');
         $totalSpace = disk_total_space($path);

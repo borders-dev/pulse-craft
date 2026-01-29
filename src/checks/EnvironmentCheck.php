@@ -15,7 +15,7 @@ class EnvironmentCheck implements CheckInterface
         return 'environment';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         $missingVars = [];
         $definedVars = [];

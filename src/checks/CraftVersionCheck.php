@@ -15,7 +15,7 @@ class CraftVersionCheck implements CheckInterface
         return 'craftVersion';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         $currentVersion = Craft::$app->getVersion();
         $edition = App::editionName(Craft::$app->getEdition());

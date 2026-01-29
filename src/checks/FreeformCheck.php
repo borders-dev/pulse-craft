@@ -15,11 +15,11 @@ class FreeformCheck implements CheckInterface
         return 'freeform';
     }
 
-    public function run(): CheckResult
+    public function run(): ?CheckResult
     {
         $plugin = Craft::$app->getPlugins()->getPlugin('freeform');
         if ($plugin === null) {
-            return CheckResult::healthy($this->getName(), ['installed' => false]);
+            return null;
         }
 
         try {

@@ -63,8 +63,11 @@ class HealthService extends Component
             }
 
             $result = $check->run();
-            $results[$name] = $result->toArray();
+            if ($result === null) {
+                continue;
+            }
 
+            $results[$name] = $result->toArray();
             $overallStatus = $this->determineOverallStatus($overallStatus, $result->status);
         }
 

@@ -8,5 +8,5 @@ interface CheckInterface
 {
     public function getName(): string;
 
-    public function run(): CheckResult;
+    public function run(): ?CheckResult;
 }
