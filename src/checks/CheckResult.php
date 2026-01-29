@@ -18,9 +18,9 @@ class CheckResult
     ) {
     }
 
-    public static function healthy(string $name, array $meta = []): self
+    public static function healthy(string $name, array $meta = [], ?string $output = null): self
     {
-        return new self($name, self::STATUS_HEALTHY, $meta);
+        return new self($name, self::STATUS_HEALTHY, $meta, $output);
     }
 
     public static function degraded(string $name, array $meta = [], ?string $output = null): self

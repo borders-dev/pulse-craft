@@ -43,7 +43,7 @@ class PluginVersionsCheck implements CheckInterface
                     if ($latest) {
                         $latestVersion = $latest->version;
                         $isCritical = $latest->critical ?? false;
-                        $notes = $latest->notes;
+                        $notes = $this->buildReleaseNotes($pluginUpdates->releases);
 
                         if ($isCritical) {
                             $hasCritical = true;
@@ -85,5 +85,22 @@ class PluginVersionsCheck implements CheckInterface
         }
 
         return CheckResult::healthy($this->getName(), $meta);
+    }
+
+    private function buildReleaseNotes(array $releases): ?array
+    {
+        $notes = [];
+        foreach ($releases as $release) {
+            if ($release->notes !== null && $release->notes !== '') {
+                $notes[] = [
+                    'version' => $release->version,
+                    'date' => $release->date?->format('Y-m-d'),
+                    'critical' => $release->critical,
+                    'notes' => $release->notes,
+                ];
+            }
+        }
+
+        return $notes ?: null;
     }
 }

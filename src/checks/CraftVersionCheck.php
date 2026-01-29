@@ -34,8 +34,8 @@ class CraftVersionCheck implements CheckInterface
                 if ($latest) {
                     $latestVersion = $latest->version;
                     $isCritical = $latest->critical ?? false;
-                    $notes = $latest->notes;
                 }
+                $notes = $this->buildReleaseNotes($craftUpdates->releases);
             }
         } catch (Throwable) {
             return CheckResult::healthy($this->getName(), [
@@ -66,13 +66,26 @@ class CraftVersionCheck implements CheckInterface
         }
 
         if ($hasUpdate) {
-            return CheckResult::degraded(
-                $this->getName(),
-                $meta,
-                "Update available: {$latestVersion}"
-            );
+            return CheckResult::healthy($this->getName(), $meta, "Update available: {$latestVersion}");
         }
 
         return CheckResult::healthy($this->getName(), $meta);
+    }
+
+    private function buildReleaseNotes(array $releases): ?array
+    {
+        $notes = [];
+        foreach ($releases as $release) {
+            if ($release->notes !== null && $release->notes !== '') {
+                $notes[] = [
+                    'version' => $release->version,
+                    'date' => $release->date?->format('Y-m-d'),
+                    'critical' => $release->critical,
+                    'notes' => $release->notes,
+                ];
+            }
+        }
+
+        return $notes ?: null;
     }
 }
