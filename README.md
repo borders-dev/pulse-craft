@@ -27,4 +27,20 @@ composer require borders-dev/craft-pulse
 
 # tell Craft to install the plugin
 ./craft plugin/install pulse
+
+# generate a secret key for the health endpoint
+./craft pulse/generate-key
+```
+
+## Configuration
+
+Pulse requires a secret key to authenticate requests to the `/_pulse/health` endpoint. You can either:
+
+- Run `./craft pulse/generate-key` to generate a key and save it to your `.env` file automatically
+- Add your own key to `.env` manually: `PULSE_SECRET_KEY=your-secret-key`
+
+The health endpoint can then be accessed by including the key in the `X-Pulse-Key` header:
+
+```bash
+curl -H "X-Pulse-Key: your-secret-key" https://your-site.com/_pulse/health
 ```
