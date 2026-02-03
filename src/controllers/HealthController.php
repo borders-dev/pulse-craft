@@ -41,7 +41,7 @@ class HealthController extends Controller
         $statusCode = match ($healthData['status']) {
             'healthy' => 200,
             'degraded' => 200,
-            'unhealthy' => 503,
+            'unhealthy' => 200,
             default => 200,
         };
 
