@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace bordersdev\craftpulse;
 
+use bordersdev\craftpulse\console\controllers\DefaultController;
 use bordersdev\craftpulse\models\Settings;
 use bordersdev\craftpulse\services\HealthService;
 use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\console\Application as ConsoleApplication;
 use craft\events\RegisterUrlRulesEvent;
 use craft\web\UrlManager;
 use yii\base\Event;
@@ -38,6 +40,7 @@ class Pulse extends Plugin
 
         Craft::$app->onInit(function() {
             $this->registerRoutes();
+            $this->registerConsoleCommands();
         });
     }
 
@@ -66,5 +69,12 @@ class Pulse extends Plugin
                 $event->rules[$endpointPath] = 'pulse/health/index';
             }
         );
+    }
+
+    private function registerConsoleCommands(): void
+    {
+        if (Craft::$app instanceof ConsoleApplication) {
+            Craft::$app->controllerMap['pulse'] = DefaultController::class;
+        }
     }
 }
