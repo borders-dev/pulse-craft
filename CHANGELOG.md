@@ -1,5 +1,9 @@
 # Release Notes for Pulse
 
+## 0.5.2
+- Run `./craft pulse/generate-key` to generate a key and save it to your `.env` file automatically
+- Always return 200 HTTP code on the endpoint
+
 ## 0.5.1
 - Omit formie/freeform checks from response when plugin not installed
 - Include full release notes for all versions between current and latest
