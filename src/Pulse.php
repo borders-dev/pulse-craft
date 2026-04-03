@@ -23,7 +23,7 @@ use yii\base\Event;
 class Pulse extends Plugin
 {
     public string $schemaVersion = '1.0.0';
-    public bool $hasCpSettings = true;
+    public bool $hasCpSettings = false;
 
     public static function config(): array
     {
@@ -46,15 +46,14 @@ class Pulse extends Plugin
 
     protected function createSettingsModel(): ?Model
     {
-        return Craft::createObject(Settings::class);
-    }
+        $settings = new Settings();
+        $fileConfig = Craft::$app->getConfig()->getConfigFromFile('pulse');
 
-    protected function settingsHtml(): ?string
-    {
-        return Craft::$app->view->renderTemplate('pulse/_settings.twig', [
-            'plugin' => $this,
-            'settings' => $this->getSettings(),
-        ]);
+        if (is_array($fileConfig)) {
+            $settings->setAttributes($fileConfig, false);
+        }
+
+        return $settings;
     }
 
     private function registerRoutes(): void

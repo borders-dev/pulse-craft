@@ -6,8 +6,10 @@ namespace bordersdev\craftpulse\checks;
 
 use bordersdev\craftpulse\Pulse;
 use Craft;
+use craft\helpers\DateTimeHelper;
 use craft\queue\Queue;
 use Throwable;
+use yii\db\Query;
 
 class QueueCheck implements CheckInterface
 {
@@ -28,43 +30,34 @@ class QueueCheck implements CheckInterface
                 ]);
             }
 
-            $jobInfo = $queue->getJobInfo();
-            $pending = count($jobInfo);
-            $settings = Pulse::getInstance()->getSettings();
-            $stuckThreshold = $settings->queueStuckThreshold;
-
-            $stuck = 0;
-            $now = time();
-
-            foreach ($jobInfo as $job) {
-                if (isset($job['timePushed']) && ($now - $job['timePushed']) > $stuckThreshold) {
-                    $stuck++;
-                }
-            }
-
+            $pending = count($queue->getJobInfo());
             $failed = $queue->getTotalFailed();
+            $settings = Pulse::getInstance()->getSettings();
+            $ageThreshold = $settings->queueAgeThreshold;
+            $cutoff = DateTimeHelper::currentTimeStamp() - $ageThreshold;
 
-            if ($stuck > 0 || $failed > 0) {
-                $messages = [];
-                if ($stuck > 0) {
-                    $messages[] = "$stuck job(s) stuck for more than " . ($stuckThreshold / 60) . " minutes";
-                }
-                if ($failed > 0) {
-                    $messages[] = "$failed failed job(s)";
-                }
+            $stale = (int)(new Query())
+                ->from($queue->tableName)
+                ->where(['channel' => $queue->channel(), 'fail' => false, 'timeUpdated' => null])
+                ->andWhere('[[timePushed]] + [[delay]] <= :cutoff', [':cutoff' => $cutoff])
+                ->count();
 
-                return CheckResult::unhealthy($this->getName(), [
-                    'pending' => $pending,
-                    'stuck' => $stuck,
-                    'failed' => $failed,
-                ], implode('; ', $messages));
+            $meta = [
+                'pending' => $pending,
+                'failed' => $failed,
+                'stale' => $stale,
+            ];
+
+            if ($failed > 0) {
+                return CheckResult::unhealthy($this->getName(), $meta, "$failed failed job(s)");
             }
 
-            return CheckResult::healthy($this->getName(), [
-                'pending' => $pending,
-                'stuck' => 0,
-                'failed' => $failed,
-            ]);
+            if ($stale > 0) {
+                $minutes = (int)($ageThreshold / 60);
+                return CheckResult::unhealthy($this->getName(), $meta, "$stale job(s) waiting longer than $minutes minutes");
+            }
+
+            return CheckResult::healthy($this->getName(), $meta);
         } catch (Throwable $e) {
             return CheckResult::unhealthy(
                 $this->getName(),

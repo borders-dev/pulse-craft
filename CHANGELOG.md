@@ -1,5 +1,10 @@
 # Release Notes for Pulse
 
+## 0.5.3
+- Fix queue check: detect stale jobs via direct DB query (previously `timePushed` was not exposed by `getJobInfo()`)
+- Replace stuck threshold with configurable `queueAgeThreshold` (default 5 minutes)
+- Switch from CP settings page to `config/pulse.php` config file
+
 ## 0.5.2
 - Run `./craft pulse/generate-key` to generate a key and save it to your `.env` file automatically
 - Always return 200 HTTP code on the endpoint

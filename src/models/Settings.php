@@ -12,7 +12,7 @@ class Settings extends Model
     public ?string $secretKey = null;
     public string $endpointPath = '_pulse/health';
     public int $diskSpaceThreshold = 90;
-    public int $queueStuckThreshold = 3600;
+    public int $queueAgeThreshold = 300;
     public int $failedLoginWindow = 86400;
     public array $enabledChecks = [
         'database' => true,
@@ -43,7 +43,7 @@ class Settings extends Model
         return [
             [['endpointPath'], 'required'],
             [['endpointPath'], 'string'],
-            [['diskSpaceThreshold', 'queueStuckThreshold', 'failedLoginWindow'], 'integer'],
+            [['diskSpaceThreshold', 'queueAgeThreshold', 'failedLoginWindow'], 'integer'],
             [['diskSpaceThreshold'], 'integer', 'min' => 1, 'max' => 100],
         ];
     }
