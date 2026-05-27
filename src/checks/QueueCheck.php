@@ -38,7 +38,7 @@ class QueueCheck implements CheckInterface
 
             $stale = (int)(new Query())
                 ->from($queue->tableName)
-                ->where(['channel' => $queue->channel(), 'fail' => false, 'timeUpdated' => null])
+                ->where(['channel' => $queue->channel, 'fail' => false, 'timeUpdated' => null])
                 ->andWhere('[[timePushed]] + [[delay]] <= :cutoff', [':cutoff' => $cutoff])
                 ->count();
 
