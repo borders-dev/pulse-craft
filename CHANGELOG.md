@@ -1,5 +1,14 @@
 # Release Notes for Ledge
 
+## 5.0.1
+- Each health check now runs inside its own try/catch; a failing check returns a "Check unavailable" result instead of bringing down the endpoint
+- Added a service-level try/catch backstop in `HealthService` so unexpected exceptions can never 500 the response
+- Exception messages no longer appear in the response body (they could leak DSN fragments and other sensitive detail); details are written to `Craft::error()` instead
+- `/health` now returns `503` when the overall status is `unhealthy` (previously always `200`); `healthy` and `degraded` still return `200`
+- Cleaned up the 401 response in `HealthController::beforeAction` to use idiomatic Yii response data flow
+- Fix queue check accessing `$queue->channel` as a property instead of calling it as a method
+- Drop residual Craft 4 compatibility shims (BackedEnum normalization in `LicenseCheck`, `App::editionName()` in `CraftVersionCheck`)
+
 ## 5.0.0
 - Renamed plugin from Pulse to Ledge
 - Versioning now tracks the Craft major version (this is the Craft 5 line)
