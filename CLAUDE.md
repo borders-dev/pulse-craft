@@ -1,19 +1,16 @@
-# Pulse - Craft CMS Health Monitoring Plugin
+# Ledge - Craft CMS Health Monitoring Plugin
 
 ## Project Overview
 
-Pulse is a Craft CMS 5 plugin that exposes a secured `/health` endpoint returning standardized health check data. It's part of a two-part monitoring system—this plugin runs on client sites, while a separate Pulse Service polls and aggregates the data.
-
-**Plugin dev URL:** https://pulse-craft.ddev.site/
-**Host Craft site:** https://sauer-brands.ddev.site/
+Ledge is a Craft CMS 5 plugin that exposes a secured `/health` endpoint returning standardized health check data. It's part of a two-part monitoring system—this plugin runs on client sites, while a separate Ledge Service polls and aggregates the data.
 
 ## Tech Stack
 
 - **PHP:** 8.2+
 - **Craft CMS:** 5.x
 - **DDEV:** Local development environment
-- **Namespace:** `bordersdev\craftpulse`
-- **Plugin Handle:** `pulse`
+- **Namespace:** `ledgehq\craftledge`
+- **Plugin Handle:** `ledge`
 
 ## DDEV Commands
 
@@ -30,7 +27,7 @@ ddev composer phpstan       # Run PHPStan static analysis
 
 ```
 src/
-├── Pulse.php              # Main plugin class
+├── Ledge.php              # Main plugin class
 ├── checks/
 │   ├── CheckInterface.php     # Contract for health checks
 │   ├── CheckResult.php        # Standardized result object
@@ -45,18 +42,15 @@ src/
 │   ├── MemoryCheck.php        # PHP memory monitoring
 │   ├── PluginVersionsCheck.php # Plugin updates check
 │   └── QueueCheck.php         # Queue monitoring check
+├── console/
+│   └── controllers/
+│       └── DefaultController.php # Console commands
 ├── controllers/
 │   └── HealthController.php # /health endpoint
 ├── models/
 │   └── Settings.php       # Plugin settings
-├── services/
-│   └── HealthService.php  # Orchestrates all checks
-└── templates/
-    └── _settings.twig     # Settings UI
-
-notes/
-├── plugin.md              # Plugin specification
-└── service.md             # Pulse Service specification
+└── services/
+    └── HealthService.php  # Orchestrates all checks
 ```
 
 ## Craft CMS 5 Plugin Conventions
@@ -77,14 +71,14 @@ Event::on(
     UrlManager::class,
     UrlManager::EVENT_REGISTER_SITE_URL_RULES,  // Note: includes "URL"
     function(RegisterUrlRulesEvent $event) {
-        $event->rules['health'] = 'pulse/health/index';
+        $event->rules['health'] = 'ledge/health/index';
     }
 );
 ```
 
 ### Services
 - Register in `config()` components array
-- Access via `Pulse::getInstance()->serviceName`
+- Access via `Ledge::getInstance()->serviceName`
 
 ### Controllers
 - Extend `craft\web\Controller`
@@ -94,7 +88,7 @@ Event::on(
 ## Health Endpoint Spec
 
 **Endpoint:** `/health` (configurable)
-**Auth:** `X-Pulse-Key` header with secret key
+**Auth:** `X-Ledge-Key` header with secret key
 **Response format:**
 ```json
 {
@@ -137,18 +131,16 @@ Event::on(
 
 ## Environment Variables
 
-- `PULSE_SECRET_KEY` - Health endpoint authentication key
+- `LEDGE_SECRET_KEY` - Health endpoint authentication key
 
 ## Testing the Plugin
 
 Access the health endpoint:
 ```bash
-curl -H "X-Pulse-Key: your-secret-key" https://sauer-brands.ddev.site/health
+curl -H "X-Ledge-Key: your-secret-key" https://your-site.ddev.site/health
 ```
 
 ## Related Documentation
 
 - [Craft CMS Plugin Development](https://craftcms.com/docs/5.x/extend/)
 - [Craft Events Reference](https://craftcms.com/docs/5.x/extend/events.html)
-- See `notes/plugin.md` for full specification
-- See `notes/service.md` for Pulse Service specification
