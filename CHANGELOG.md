@@ -1,7 +1,9 @@
 # Release Notes for Ledge
 
-## 0.6.0
+## 5.0.0
 - Renamed plugin from Pulse to Ledge
+- Versioning now tracks the Craft major version (this is the Craft 5 line)
+- Requires Craft CMS 5 and PHP 8.2+
 - Package renamed to `ledgehq/ledge-craft` (previously `borders-dev/craft-pulse`)
 - Namespace changed to `ledgehq\craftledge`; main class is now `Ledge`
 - Plugin handle changed to `ledge` (config file is now `config/ledge.php`)
