@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace ledgehq\craftledge\checks;
 
 use ledgehq\craftledge\Ledge;
+use Craft;
 use craft\db\Query;
 use DateTime;
+use Throwable;
 
 class FailedLoginsCheck implements CheckInterface
 {
@@ -17,36 +19,36 @@ class FailedLoginsCheck implements CheckInterface
 
     public function run(): ?CheckResult
     {
-        $settings = Ledge::getInstance()->getSettings();
-        $windowSeconds = $settings->failedLoginWindow;
+        try {
+            $settings = Ledge::getInstance()->getSettings();
+            $windowSeconds = $settings->failedLoginWindow;
 
-        $since = (new DateTime())->modify("-{$windowSeconds} seconds");
+            $since = (new DateTime())->modify("-{$windowSeconds} seconds");
 
-        $count = (new Query())
-            ->from('{{%users}}')
-            ->where(['>', 'invalidLoginCount', 0])
-            ->andWhere(['>', 'invalidLoginWindowStart', $since->format('Y-m-d H:i:s')])
-            ->count();
+            $count = (int) (new Query())
+                ->from('{{%users}}')
+                ->where(['>', 'invalidLoginCount', 0])
+                ->andWhere(['>', 'invalidLoginWindowStart', $since->format('Y-m-d H:i:s')])
+                ->count();
 
-        $windowHours = round($windowSeconds / 3600, 1);
-
-        if ($count >= 50) {
-            return CheckResult::unhealthy($this->getName(), [
-                'count' => (int) $count,
+            $windowHours = round($windowSeconds / 3600, 1);
+            $meta = [
+                'count' => $count,
                 'window' => "{$windowHours}h",
-            ], "{$count} failed login attempts in the last {$windowHours} hours");
-        }
+            ];
 
-        if ($count >= 10) {
-            return CheckResult::degraded($this->getName(), [
-                'count' => (int) $count,
-                'window' => "{$windowHours}h",
-            ], "{$count} failed login attempts in the last {$windowHours} hours");
-        }
+            if ($count >= 50) {
+                return CheckResult::unhealthy($this->getName(), $meta, "{$count} failed login attempts in the last {$windowHours} hours");
+            }
 
-        return CheckResult::healthy($this->getName(), [
-            'count' => (int) $count,
-            'window' => "{$windowHours}h",
-        ]);
+            if ($count >= 10) {
+                return CheckResult::degraded($this->getName(), $meta, "{$count} failed login attempts in the last {$windowHours} hours");
+            }
+
+            return CheckResult::healthy($this->getName(), $meta);
+        } catch (Throwable $e) {
+            Craft::error('Ledge failedLogins check failed: ' . $e->getMessage(), __METHOD__);
+            return CheckResult::degraded($this->getName(), [], 'Check unavailable');
+        }
     }
 }

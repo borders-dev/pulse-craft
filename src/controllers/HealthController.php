@@ -22,11 +22,10 @@ class HealthController extends Controller
         if ($action->id === 'index') {
             $error = $this->validateSecretKey();
             if ($error !== null) {
-                Craft::$app->getResponse()->setStatusCode(401);
-                Craft::$app->getResponse()->data = Craft::$app->getResponse()->content = json_encode([
-                    'error' => $error,
-                ]);
-                Craft::$app->getResponse()->format = Response::FORMAT_JSON;
+                $response = Craft::$app->getResponse();
+                $response->setStatusCode(401);
+                $response->format = Response::FORMAT_JSON;
+                $response->data = ['error' => $error];
                 return false;
             }
         }
@@ -38,14 +37,9 @@ class HealthController extends Controller
     {
         $healthData = Ledge::getInstance()->health->runChecks();
 
-        $statusCode = match ($healthData['status']) {
-            'healthy' => 200,
-            'degraded' => 200,
-            'unhealthy' => 200,
-            default => 200,
-        };
-
-        Craft::$app->getResponse()->setStatusCode($statusCode);
+        Craft::$app->getResponse()->setStatusCode(
+            $healthData['status'] === 'unhealthy' ? 503 : 200
+        );
 
         return $this->asJson($healthData);
     }

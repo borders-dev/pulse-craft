@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ledgehq\craftledge\checks;
 
 use Craft;
+use Throwable;
 
 class LicenseCheck implements CheckInterface
 {
@@ -15,43 +16,47 @@ class LicenseCheck implements CheckInterface
 
     public function run(): ?CheckResult
     {
-        $licenseKeyStatus = Craft::$app->getCache()->get('licenseKeyStatus') ?? 'unknown';
-        $licensedEdition = Craft::$app->getLicensedEdition()?->value;
-        $currentEdition = Craft::$app->getEdition()->value;
+        try {
+            $licenseKeyStatus = Craft::$app->getCache()->get('licenseKeyStatus') ?? 'unknown';
+            $licensedEdition = Craft::$app->getLicensedEdition()?->value;
+            $currentEdition = Craft::$app->getEdition()->value;
 
-        $pluginLicenses = [];
-        foreach (Craft::$app->getPlugins()->getAllPlugins() as $handle => $plugin) {
-            $pluginLicenses[$handle] = [
-                'name' => $plugin->name,
-                'licenseKeyStatus' => $plugin->licenseKeyStatus ?? 'unknown',
-            ];
-        }
-
-        $hasInvalidPluginLicense = false;
-        foreach ($pluginLicenses as $license) {
-            if (in_array($license['licenseKeyStatus'], ['invalid', 'mismatched', 'astray'], true)) {
-                $hasInvalidPluginLicense = true;
-                break;
+            $pluginLicenses = [];
+            foreach (Craft::$app->getPlugins()->getAllPlugins() as $handle => $plugin) {
+                $pluginLicenses[$handle] = [
+                    'name' => $plugin->name,
+                    'licenseKeyStatus' => $plugin->licenseKeyStatus ?? 'unknown',
+                ];
             }
-        }
 
-        $editionMismatch = $licensedEdition !== null && $licensedEdition !== $currentEdition;
-        $craftData = [
-            'status' => $licenseKeyStatus,
-            'licensedEdition' => $licensedEdition,
-            'currentEdition' => $currentEdition,
-        ];
+            $hasInvalidPluginLicense = false;
+            foreach ($pluginLicenses as $license) {
+                if (in_array($license['licenseKeyStatus'], ['invalid', 'mismatched', 'astray'], true)) {
+                    $hasInvalidPluginLicense = true;
+                    break;
+                }
+            }
 
-        if ($licenseKeyStatus === 'invalid' || $editionMismatch || $hasInvalidPluginLicense) {
-            return CheckResult::unhealthy($this->getName(), [
+            $editionMismatch = $licensedEdition !== null && $licensedEdition !== $currentEdition;
+            $craftData = [
+                'status' => $licenseKeyStatus,
+                'licensedEdition' => $licensedEdition,
+                'currentEdition' => $currentEdition,
+            ];
+
+            $meta = [
                 'craft' => $craftData,
                 'plugins' => $pluginLicenses,
-            ], 'License issue detected');
-        }
+            ];
 
-        return CheckResult::healthy($this->getName(), [
-            'craft' => $craftData,
-            'plugins' => $pluginLicenses,
-        ]);
+            if ($licenseKeyStatus === 'invalid' || $editionMismatch || $hasInvalidPluginLicense) {
+                return CheckResult::unhealthy($this->getName(), $meta, 'License issue detected');
+            }
+
+            return CheckResult::healthy($this->getName(), $meta);
+        } catch (Throwable $e) {
+            Craft::error('Ledge license check failed: ' . $e->getMessage(), __METHOD__);
+            return CheckResult::degraded($this->getName(), [], 'Check unavailable');
+        }
     }
 }

@@ -59,10 +59,11 @@ class QueueCheck implements CheckInterface
 
             return CheckResult::healthy($this->getName(), $meta);
         } catch (Throwable $e) {
+            Craft::error('Ledge queue check failed: ' . $e->getMessage(), __METHOD__);
             return CheckResult::unhealthy(
                 $this->getName(),
                 [],
-                'Queue check failed: ' . $e->getMessage()
+                'Queue check failed'
             );
         }
     }

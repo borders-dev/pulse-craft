@@ -26,10 +26,11 @@ class DatabaseCheck implements CheckInterface
                 'responseTime' => $responseTime,
             ]);
         } catch (Throwable $e) {
+            Craft::error('Ledge database check failed: ' . $e->getMessage(), __METHOD__);
             return CheckResult::unhealthy(
                 $this->getName(),
                 [],
-                'Database connection failed: ' . $e->getMessage()
+                'Database connection failed'
             );
         }
     }

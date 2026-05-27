@@ -16,6 +16,16 @@ class PluginVersionsCheck implements CheckInterface
 
     public function run(): ?CheckResult
     {
+        try {
+            return $this->collect();
+        } catch (Throwable $e) {
+            Craft::error('Ledge plugins check failed: ' . $e->getMessage(), __METHOD__);
+            return CheckResult::degraded($this->getName(), [], 'Check unavailable');
+        }
+    }
+
+    private function collect(): CheckResult
+    {
         $plugins = Craft::$app->getPlugins()->getAllPlugins();
 
         try {

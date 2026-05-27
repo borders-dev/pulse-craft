@@ -6,6 +6,7 @@ namespace ledgehq\craftledge\checks;
 
 use ledgehq\craftledge\Ledge;
 use Craft;
+use Throwable;
 
 class DiskSpaceCheck implements CheckInterface
 {
@@ -16,44 +17,43 @@ class DiskSpaceCheck implements CheckInterface
 
     public function run(): ?CheckResult
     {
-        $path = Craft::getAlias('@storage');
-        $totalSpace = disk_total_space($path);
-        $freeSpace = disk_free_space($path);
+        try {
+            $path = Craft::getAlias('@storage');
+            $totalSpace = @disk_total_space($path);
+            $freeSpace = @disk_free_space($path);
 
-        if ($totalSpace === false || $freeSpace === false || $totalSpace < 1) {
-            return CheckResult::unhealthy(
-                $this->getName(),
-                [],
-                'Unable to determine disk space'
-            );
-        }
+            if ($totalSpace === false || $freeSpace === false || $totalSpace < 1) {
+                return CheckResult::unhealthy(
+                    $this->getName(),
+                    [],
+                    'Unable to determine disk space'
+                );
+            }
 
-        $usedSpace = $totalSpace - $freeSpace;
-        $usedPercent = (int) round(($usedSpace / $totalSpace) * 100);
+            $usedSpace = $totalSpace - $freeSpace;
+            $usedPercent = (int) round(($usedSpace / $totalSpace) * 100);
 
-        $settings = Ledge::getInstance()->getSettings();
-        $threshold = $settings->diskSpaceThreshold;
+            $settings = Ledge::getInstance()->getSettings();
+            $threshold = $settings->diskSpaceThreshold;
 
-        if ($usedPercent >= $threshold) {
-            return CheckResult::unhealthy($this->getName(), [
+            $meta = [
                 'usedPercent' => $usedPercent,
                 'freeBytes' => $freeSpace,
                 'totalBytes' => $totalSpace,
-            ], "Disk usage at {$usedPercent}% (threshold: {$threshold}%)");
-        }
+            ];
 
-        if ($threshold > 10 && $usedPercent >= $threshold - 10) {
-            return CheckResult::degraded($this->getName(), [
-                'usedPercent' => $usedPercent,
-                'freeBytes' => $freeSpace,
-                'totalBytes' => $totalSpace,
-            ], "Disk usage approaching threshold at {$usedPercent}%");
-        }
+            if ($usedPercent >= $threshold) {
+                return CheckResult::unhealthy($this->getName(), $meta, "Disk usage at {$usedPercent}% (threshold: {$threshold}%)");
+            }
 
-        return CheckResult::healthy($this->getName(), [
-            'usedPercent' => $usedPercent,
-            'freeBytes' => $freeSpace,
-            'totalBytes' => $totalSpace,
-        ]);
+            if ($threshold > 10 && $usedPercent >= $threshold - 10) {
+                return CheckResult::degraded($this->getName(), $meta, "Disk usage approaching threshold at {$usedPercent}%");
+            }
+
+            return CheckResult::healthy($this->getName(), $meta);
+        } catch (Throwable $e) {
+            Craft::error('Ledge disk check failed: ' . $e->getMessage(), __METHOD__);
+            return CheckResult::degraded($this->getName(), [], 'Check unavailable');
+        }
     }
 }

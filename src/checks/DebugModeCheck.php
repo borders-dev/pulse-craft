@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ledgehq\craftledge\checks;
 
 use Craft;
+use Throwable;
 
 class DebugModeCheck implements CheckInterface
 {
@@ -15,19 +16,24 @@ class DebugModeCheck implements CheckInterface
 
     public function run(): ?CheckResult
     {
-        $devMode = Craft::$app->getConfig()->getGeneral()->devMode;
-        $allowAdminChanges = Craft::$app->getConfig()->getGeneral()->allowAdminChanges;
+        try {
+            $general = Craft::$app->getConfig()->getGeneral();
+            $devMode = $general->devMode;
+            $allowAdminChanges = $general->allowAdminChanges;
 
-        if ($devMode) {
-            return CheckResult::degraded($this->getName(), [
-                'devMode' => true,
+            $meta = [
+                'devMode' => $devMode,
                 'allowAdminChanges' => $allowAdminChanges,
-            ], 'Dev mode is enabled');
-        }
+            ];
 
-        return CheckResult::healthy($this->getName(), [
-            'devMode' => false,
-            'allowAdminChanges' => $allowAdminChanges,
-        ]);
+            if ($devMode) {
+                return CheckResult::degraded($this->getName(), $meta, 'Dev mode is enabled');
+            }
+
+            return CheckResult::healthy($this->getName(), $meta);
+        } catch (Throwable $e) {
+            Craft::error('Ledge debugMode check failed: ' . $e->getMessage(), __METHOD__);
+            return CheckResult::degraded($this->getName(), [], 'Check unavailable');
+        }
     }
 }

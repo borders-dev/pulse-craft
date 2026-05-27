@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace ledgehq\craftledge\checks;
 
+use Craft;
+use Throwable;
+
 class MemoryCheck implements CheckInterface
 {
     public function getName(): string
@@ -13,45 +16,41 @@ class MemoryCheck implements CheckInterface
 
     public function run(): ?CheckResult
     {
-        $memoryLimit = $this->getMemoryLimitBytes();
-        $memoryUsage = memory_get_usage(true);
-        $peakUsage = memory_get_peak_usage(true);
+        try {
+            $memoryLimit = $this->getMemoryLimitBytes();
+            $memoryUsage = memory_get_usage(true);
+            $peakUsage = memory_get_peak_usage(true);
 
-        if ($memoryLimit <= 0) {
-            return CheckResult::healthy($this->getName(), [
-                'usageBytes' => $memoryUsage,
-                'peakBytes' => $peakUsage,
-                'limitBytes' => null,
-                'usedPercent' => null,
-            ]);
-        }
+            if ($memoryLimit <= 0) {
+                return CheckResult::healthy($this->getName(), [
+                    'usageBytes' => $memoryUsage,
+                    'peakBytes' => $peakUsage,
+                    'limitBytes' => null,
+                    'usedPercent' => null,
+                ]);
+            }
 
-        $usedPercent = (int) round(($memoryUsage / $memoryLimit) * 100);
-
-        if ($usedPercent >= 90) {
-            return CheckResult::unhealthy($this->getName(), [
-                'usageBytes' => $memoryUsage,
-                'peakBytes' => $peakUsage,
-                'limitBytes' => $memoryLimit,
-                'usedPercent' => $usedPercent,
-            ], "Memory usage at {$usedPercent}%");
-        }
-
-        if ($usedPercent >= 75) {
-            return CheckResult::degraded($this->getName(), [
+            $usedPercent = (int) round(($memoryUsage / $memoryLimit) * 100);
+            $meta = [
                 'usageBytes' => $memoryUsage,
                 'peakBytes' => $peakUsage,
                 'limitBytes' => $memoryLimit,
                 'usedPercent' => $usedPercent,
-            ], "Memory usage at {$usedPercent}%");
-        }
+            ];
 
-        return CheckResult::healthy($this->getName(), [
-            'usageBytes' => $memoryUsage,
-            'peakBytes' => $peakUsage,
-            'limitBytes' => $memoryLimit,
-            'usedPercent' => $usedPercent,
-        ]);
+            if ($usedPercent >= 90) {
+                return CheckResult::unhealthy($this->getName(), $meta, "Memory usage at {$usedPercent}%");
+            }
+
+            if ($usedPercent >= 75) {
+                return CheckResult::degraded($this->getName(), $meta, "Memory usage at {$usedPercent}%");
+            }
+
+            return CheckResult::healthy($this->getName(), $meta);
+        } catch (Throwable $e) {
+            Craft::error('Ledge memory check failed: ' . $e->getMessage(), __METHOD__);
+            return CheckResult::degraded($this->getName(), [], 'Check unavailable');
+        }
     }
 
     private function getMemoryLimitBytes(): int

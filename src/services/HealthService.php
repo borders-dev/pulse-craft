@@ -19,6 +19,8 @@ use ledgehq\craftledge\checks\MemoryCheck;
 use ledgehq\craftledge\checks\PluginVersionsCheck;
 use ledgehq\craftledge\checks\QueueCheck;
 use ledgehq\craftledge\Ledge;
+use Craft;
+use Throwable;
 use yii\base\Component;
 
 class HealthService extends Component
@@ -62,7 +64,13 @@ class HealthService extends Component
                 continue;
             }
 
-            $result = $check->run();
+            try {
+                $result = $check->run();
+            } catch (Throwable $e) {
+                Craft::error("Ledge check '{$name}' threw: " . $e->getMessage(), __METHOD__);
+                $result = CheckResult::unhealthy($name, [], 'Check threw an exception');
+            }
+
             if ($result === null) {
                 continue;
             }
