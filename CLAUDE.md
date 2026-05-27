@@ -9,8 +9,8 @@ Pulse is a Craft CMS 5 plugin that exposes a secured `/health` endpoint returnin
 
 ## Tech Stack
 
-- **PHP:** 8.0.2+
-- **Craft CMS:** 3.7+ / 4.x / 5.x
+- **PHP:** 8.2+
+- **Craft CMS:** 5.x
 - **DDEV:** Local development environment
 - **Namespace:** `bordersdev\craftpulse`
 - **Plugin Handle:** `pulse`
@@ -128,13 +128,12 @@ Event::on(
 
 ## Code Style
 
-- PHP 8.0+ features (typed properties, match expressions, constructor promotion)
+- PHP 8.2+ features (typed properties, match expressions, constructor promotion, readonly)
 - No comments unless logic is non-obvious
 - `declare(strict_types=1);` in all files
 - Follow Craft's ECS configuration (no space before closure parentheses)
 - Use constructor property promotion where appropriate
 - Import order: project namespace first, then Craft, then vendor, then PHP
-- Avoid `readonly` properties (PHP 8.1+) to maintain Craft 4 compatibility
 
 ## Environment Variables
 

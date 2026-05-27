@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace ledgehq\craftledge\checks;
 
 use Craft;
-use craft\helpers\App;
 use Throwable;
 
 class CraftVersionCheck implements CheckInterface
@@ -18,7 +17,7 @@ class CraftVersionCheck implements CheckInterface
     public function run(): ?CheckResult
     {
         $currentVersion = Craft::$app->getVersion();
-        $edition = App::editionName(Craft::$app->getEdition());
+        $edition = Craft::$app->getEdition()->handle();
 
         try {
             $updates = Craft::$app->getUpdates()->getUpdates(false);
