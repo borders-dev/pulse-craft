@@ -28,10 +28,7 @@
     "name": "Pulse",
     "developer": "Ledge HQ",
     "documentationUrl": "https://github.com/ledge-hq/ledge-craft",
-    "class": "bordersdev\\craftpulse\\Pulse",
-    "branch-alias": {
-      "dev-main": "2.x-dev"
-    }
+    "class": "bordersdev\\craftpulse\\Pulse"
   },
   "scripts": {
     "check-cs": "ecs check --ansi",
