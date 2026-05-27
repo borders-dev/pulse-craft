@@ -7,5 +7,5 @@ parameters:
         - src
     excludePaths:
         analyseAndScan:
-            - src/Pulse.php
+            - src/Ledge.php
             - src/controllers/HealthController.php

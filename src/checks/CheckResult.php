@@ -35,10 +35,7 @@ class CheckResult
 
     public function toArray(): array
     {
-        $result = [
-            'status' => $this->status,
-            ...$this->meta,
-        ];
+        $result = array_merge(['status' => $this->status], $this->meta);
 
         if ($this->output !== null) {
             $result['output'] = $this->output;

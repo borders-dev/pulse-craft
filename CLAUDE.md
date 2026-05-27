@@ -2,12 +2,14 @@
 
 ## Project Overview
 
-Ledge is a Craft CMS 5 plugin that exposes a secured `/health` endpoint returning standardized health check data. It's part of a two-part monitoring system—this plugin runs on client sites, while a separate Ledge Service polls and aggregates the data.
+Ledge is a Craft CMS 4 plugin that exposes a secured `/health` endpoint returning standardized health check data. It's part of a two-part monitoring system—this plugin runs on client sites, while a separate Ledge Service polls and aggregates the data.
+
+This is the **4.x line** — see the `5.x` branch for the Craft 5 release.
 
 ## Tech Stack
 
-- **PHP:** 8.2+
-- **Craft CMS:** 5.x
+- **PHP:** 8.0.2+
+- **Craft CMS:** 4.x
 - **DDEV:** Local development environment
 - **Namespace:** `ledgehq\craftledge`
 - **Plugin Handle:** `ledge`
@@ -53,7 +55,7 @@ src/
     └── HealthService.php  # Orchestrates all checks
 ```
 
-## Craft CMS 5 Plugin Conventions
+## Craft CMS 4 Plugin Conventions
 
 ### Plugin Class Pattern
 - Extends `craft\base\Plugin`
@@ -122,7 +124,8 @@ Event::on(
 
 ## Code Style
 
-- PHP 8.2+ features (typed properties, match expressions, constructor promotion, readonly)
+- PHP 8.0+ features (typed properties, match expressions, constructor promotion)
+- Avoid `readonly` properties (PHP 8.1+) and enum-only APIs — Craft 4 supports PHP 8.0.2
 - No comments unless logic is non-obvious
 - `declare(strict_types=1);` in all files
 - Follow Craft's ECS configuration (no space before closure parentheses)
@@ -142,5 +145,5 @@ curl -H "X-Ledge-Key: your-secret-key" https://your-site.ddev.site/health
 
 ## Related Documentation
 
-- [Craft CMS Plugin Development](https://craftcms.com/docs/5.x/extend/)
-- [Craft Events Reference](https://craftcms.com/docs/5.x/extend/events.html)
+- [Craft CMS Plugin Development](https://craftcms.com/docs/4.x/extend/)
+- [Craft Events Reference](https://craftcms.com/docs/4.x/extend/events.html)
