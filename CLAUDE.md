@@ -58,7 +58,7 @@ src/
 ### Plugin Class Pattern
 - Extends `craft\base\Plugin`
 - Use `Craft::$app->onInit()` for deferred initialization
-- Settings via `createSettingsModel()` and `settingsHtml()`
+- Settings via `createSettingsModel()` (config-file only; no CP UI)
 - Register components in `config()` static method
 
 ### Registering Routes
