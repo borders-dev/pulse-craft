@@ -1,4 +1,11 @@
-# Release Notes for Pulse
+# Release Notes for Ledge
+
+## 0.6.0
+- Renamed plugin from Pulse to Ledge
+- Package renamed to `ledgehq/ledge-craft` (previously `borders-dev/craft-pulse`)
+- Namespace changed to `ledgehq\craftledge`; main class is now `Ledge`
+- Plugin handle changed to `ledge` (config file is now `config/ledge.php`)
+- Auth env var is now `LEDGE_SECRET_KEY`, header is `X-Ledge-Key`, default endpoint is `/_ledge/health`
 
 ## 0.5.3
 - Fix queue check: detect stale jobs via direct DB query (previously `timePushed` was not exposed by `getJobInfo()`)

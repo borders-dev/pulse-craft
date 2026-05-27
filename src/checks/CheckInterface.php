@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace bordersdev\craftpulse\checks;
+namespace ledgehq\craftledge\checks;
 
 interface CheckInterface
 {

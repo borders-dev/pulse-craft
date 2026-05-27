@@ -1,6 +1,6 @@
-# pulse
+# Ledge
 
-Keep a pulse on your Craft CMS websites
+Health, uptime, and compliance monitoring for your Craft CMS sites.
 
 ## Requirements
 
@@ -12,7 +12,7 @@ You can install this plugin from the Plugin Store or with Composer.
 
 #### From the Plugin Store
 
-Go to the Plugin Store in your project’s Control Panel and search for “pulse”. Then press “Install”.
+Go to the Plugin Store in your project’s Control Panel and search for “Ledge”. Then press “Install”.
 
 #### With Composer
 
@@ -23,24 +23,24 @@ Open your terminal and run the following commands:
 cd /path/to/my-project.test
 
 # tell Composer to load the plugin
-composer require borders-dev/craft-pulse
+composer require ledgehq/ledge-craft
 
 # tell Craft to install the plugin
-./craft plugin/install pulse
+./craft plugin/install ledge
 
 # generate a secret key for the health endpoint
-./craft pulse/generate-key
+./craft ledge/generate-key
 ```
 
 ## Configuration
 
-Pulse requires a secret key to authenticate requests to the `/_pulse/health` endpoint. You can either:
+Ledge requires a secret key to authenticate requests to the `/_ledge/health` endpoint. You can either:
 
-- Run `./craft pulse/generate-key` to generate a key and save it to your `.env` file automatically
-- Add your own key to `.env` manually: `PULSE_SECRET_KEY=your-secret-key`
+- Run `./craft ledge/generate-key` to generate a key and save it to your `.env` file automatically
+- Add your own key to `.env` manually: `LEDGE_SECRET_KEY=your-secret-key`
 
-The health endpoint can then be accessed by including the key in the `X-Pulse-Key` header:
+The health endpoint can then be accessed by including the key in the `X-Ledge-Key` header:
 
 ```bash
-curl -H "X-Pulse-Key: your-secret-key" https://your-site.com/_pulse/health
+curl -H "X-Ledge-Key: your-secret-key" https://your-site.com/_ledge/health
 ```

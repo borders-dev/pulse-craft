@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace bordersdev\craftpulse\checks;
+namespace ledgehq\craftledge\checks;
 
-use bordersdev\craftpulse\Pulse;
+use ledgehq\craftledge\Ledge;
 use craft\db\Query;
 use DateTime;
 
@@ -17,7 +17,7 @@ class FailedLoginsCheck implements CheckInterface
 
     public function run(): ?CheckResult
     {
-        $settings = Pulse::getInstance()->getSettings();
+        $settings = Ledge::getInstance()->getSettings();
         $windowSeconds = $settings->failedLoginWindow;
 
         $since = (new DateTime())->modify("-{$windowSeconds} seconds");

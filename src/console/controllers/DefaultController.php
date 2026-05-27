@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace bordersdev\craftpulse\console\controllers;
+namespace ledgehq\craftledge\console\controllers;
 
 use Craft;
 use craft\console\Controller;
@@ -15,13 +15,13 @@ class DefaultController extends Controller
     {
         $key = Craft::$app->getSecurity()->generateRandomString(32);
 
-        $this->stdout('Generating Pulse secret key ... ', Console::FG_YELLOW);
+        $this->stdout('Generating Ledge secret key ... ', Console::FG_YELLOW);
 
         $configService = Craft::$app->getConfig();
         $path = $configService->getDotEnvPath();
 
         try {
-            $configService->setDotEnvVar('PULSE_SECRET_KEY', $key);
+            $configService->setDotEnvVar('LEDGE_SECRET_KEY', $key);
         } catch (\Throwable $e) {
             $this->stderr("failed\n", Console::FG_RED);
             $this->stderr("Unable to save to {$path}: {$e->getMessage()}\n", Console::FG_RED);
@@ -29,7 +29,7 @@ class DefaultController extends Controller
         }
 
         $this->stdout("done\n", Console::FG_GREEN);
-        $this->stdout("PULSE_SECRET_KEY={$key}\n");
+        $this->stdout("LEDGE_SECRET_KEY={$key}\n");
 
         return ExitCode::OK;
     }

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace bordersdev\craftpulse;
+namespace ledgehq\craftledge;
 
-use bordersdev\craftpulse\console\controllers\DefaultController;
-use bordersdev\craftpulse\models\Settings;
-use bordersdev\craftpulse\services\HealthService;
+use ledgehq\craftledge\console\controllers\DefaultController;
+use ledgehq\craftledge\models\Settings;
+use ledgehq\craftledge\services\HealthService;
 use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
@@ -16,11 +16,11 @@ use craft\web\UrlManager;
 use yii\base\Event;
 
 /**
- * @method static Pulse getInstance()
+ * @method static Ledge getInstance()
  * @method Settings getSettings()
  * @property-read HealthService $health
  */
-class Pulse extends Plugin
+class Ledge extends Plugin
 {
     public string $schemaVersion = '1.0.0';
     public bool $hasCpSettings = false;
@@ -47,7 +47,7 @@ class Pulse extends Plugin
     protected function createSettingsModel(): ?Model
     {
         $settings = new Settings();
-        $fileConfig = Craft::$app->getConfig()->getConfigFromFile('pulse');
+        $fileConfig = Craft::$app->getConfig()->getConfigFromFile('ledge');
 
         if (is_array($fileConfig)) {
             $settings->setAttributes($fileConfig, false);
@@ -65,7 +65,7 @@ class Pulse extends Plugin
             UrlManager::class,
             UrlManager::EVENT_REGISTER_SITE_URL_RULES,
             function(RegisterUrlRulesEvent $event) use ($endpointPath) {
-                $event->rules[$endpointPath] = 'pulse/health/index';
+                $event->rules[$endpointPath] = 'ledge/health/index';
             }
         );
     }
@@ -73,7 +73,7 @@ class Pulse extends Plugin
     private function registerConsoleCommands(): void
     {
         if (Craft::$app instanceof ConsoleApplication) {
-            Craft::$app->controllerMap['pulse'] = DefaultController::class;
+            Craft::$app->controllerMap['ledge'] = DefaultController::class;
         }
     }
 }

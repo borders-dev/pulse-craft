@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace bordersdev\craftpulse\checks;
+namespace ledgehq\craftledge\checks;
 
-use bordersdev\craftpulse\Pulse;
+use ledgehq\craftledge\Ledge;
 use Craft;
 
 class DiskSpaceCheck implements CheckInterface
@@ -31,7 +31,7 @@ class DiskSpaceCheck implements CheckInterface
         $usedSpace = $totalSpace - $freeSpace;
         $usedPercent = (int) round(($usedSpace / $totalSpace) * 100);
 
-        $settings = Pulse::getInstance()->getSettings();
+        $settings = Ledge::getInstance()->getSettings();
         $threshold = $settings->diskSpaceThreshold;
 
         if ($usedPercent >= $threshold) {

@@ -20,15 +20,15 @@
   },
   "autoload": {
     "psr-4": {
-      "bordersdev\\craftpulse\\": "src/"
+      "ledgehq\\craftledge\\": "src/"
     }
   },
   "extra": {
-    "handle": "pulse",
-    "name": "Pulse",
+    "handle": "ledge",
+    "name": "Ledge",
     "developer": "Ledge HQ",
     "documentationUrl": "https://github.com/ledge-hq/ledge-craft",
-    "class": "bordersdev\\craftpulse\\Pulse"
+    "class": "ledgehq\\craftledge\\Ledge"
   },
   "scripts": {
     "check-cs": "ecs check --ansi",

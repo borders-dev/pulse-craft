@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace bordersdev\craftpulse\models;
+namespace ledgehq\craftledge\models;
 
 use craft\base\Model;
 use craft\helpers\App;
@@ -10,7 +10,7 @@ use craft\helpers\App;
 class Settings extends Model
 {
     public ?string $secretKey = null;
-    public string $endpointPath = '_pulse/health';
+    public string $endpointPath = '_ledge/health';
     public int $diskSpaceThreshold = 90;
     public int $queueAgeThreshold = 300;
     public int $failedLoginWindow = 86400;
@@ -35,7 +35,7 @@ class Settings extends Model
             return App::parseEnv($this->secretKey);
         }
 
-        return App::env('PULSE_SECRET_KEY');
+        return App::env('LEDGE_SECRET_KEY');
     }
 
     public function rules(): array

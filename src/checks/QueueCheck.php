@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace bordersdev\craftpulse\checks;
+namespace ledgehq\craftledge\checks;
 
-use bordersdev\craftpulse\Pulse;
+use ledgehq\craftledge\Ledge;
 use Craft;
 use craft\helpers\DateTimeHelper;
 use craft\queue\Queue;
@@ -32,7 +32,7 @@ class QueueCheck implements CheckInterface
 
             $pending = count($queue->getJobInfo());
             $failed = $queue->getTotalFailed();
-            $settings = Pulse::getInstance()->getSettings();
+            $settings = Ledge::getInstance()->getSettings();
             $ageThreshold = $settings->queueAgeThreshold;
             $cutoff = DateTimeHelper::currentTimeStamp() - $ageThreshold;
 

@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace bordersdev\craftpulse\services;
+namespace ledgehq\craftledge\services;
 
-use bordersdev\craftpulse\checks\CheckInterface;
-use bordersdev\craftpulse\checks\CheckResult;
-use bordersdev\craftpulse\checks\CraftVersionCheck;
-use bordersdev\craftpulse\checks\DatabaseCheck;
-use bordersdev\craftpulse\checks\DebugModeCheck;
-use bordersdev\craftpulse\checks\DiskSpaceCheck;
-use bordersdev\craftpulse\checks\EnvironmentCheck;
-use bordersdev\craftpulse\checks\FailedLoginsCheck;
-use bordersdev\craftpulse\checks\FormieCheck;
-use bordersdev\craftpulse\checks\FreeformCheck;
-use bordersdev\craftpulse\checks\LicenseCheck;
-use bordersdev\craftpulse\checks\MemoryCheck;
-use bordersdev\craftpulse\checks\PluginVersionsCheck;
-use bordersdev\craftpulse\checks\QueueCheck;
-use bordersdev\craftpulse\Pulse;
+use ledgehq\craftledge\checks\CheckInterface;
+use ledgehq\craftledge\checks\CheckResult;
+use ledgehq\craftledge\checks\CraftVersionCheck;
+use ledgehq\craftledge\checks\DatabaseCheck;
+use ledgehq\craftledge\checks\DebugModeCheck;
+use ledgehq\craftledge\checks\DiskSpaceCheck;
+use ledgehq\craftledge\checks\EnvironmentCheck;
+use ledgehq\craftledge\checks\FailedLoginsCheck;
+use ledgehq\craftledge\checks\FormieCheck;
+use ledgehq\craftledge\checks\FreeformCheck;
+use ledgehq\craftledge\checks\LicenseCheck;
+use ledgehq\craftledge\checks\MemoryCheck;
+use ledgehq\craftledge\checks\PluginVersionsCheck;
+use ledgehq\craftledge\checks\QueueCheck;
+use ledgehq\craftledge\Ledge;
 use yii\base\Component;
 
 class HealthService extends Component
@@ -51,7 +51,7 @@ class HealthService extends Component
 
     public function runChecks(): array
     {
-        $settings = Pulse::getInstance()->getSettings();
+        $settings = Ledge::getInstance()->getSettings();
         $enabledChecks = $settings->enabledChecks;
 
         $results = [];
