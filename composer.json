@@ -1,14 +1,14 @@
 {
-  "name": "borders-dev/craft-pulse",
-  "description": "Keep a pulse on your Craft CMS websites",
+  "name": "ledgehq/ledge-craft",
+  "description": "Health, uptime, and compliance monitoring for your Craft CMS sites.",
   "type": "craft-plugin",
   "license": "mit",
   "support": {
-    "email": "plugins@borders.dev",
-    "issues": "https://github.com/borders-dev/pulse-craft.git/issues?state=open",
-    "source": "https://github.com/borders-dev/pulse-craft.git",
-    "docs": "https://github.com/borders-dev/pulse-craft.git",
-    "rss": "https://github.com/borders-dev/pulse-craft.git/releases.atom"
+    "email": "hello@ledgehq.app",
+    "issues": "https://github.com/ledge-hq/ledge-craft/issues?state=open",
+    "source": "https://github.com/ledge-hq/ledge-craft",
+    "docs": "https://github.com/ledge-hq/ledge-craft",
+    "rss": "https://github.com/ledge-hq/ledge-craft/releases.atom"
   },
   "require": {
     "php": ">=8.0.2",
@@ -26,8 +26,8 @@
   "extra": {
     "handle": "pulse",
     "name": "Pulse",
-    "developer": "borders-dev",
-    "documentationUrl": "https://github.com/borders-dev/pulse-craft.git",
+    "developer": "Ledge HQ",
+    "documentationUrl": "https://github.com/ledge-hq/ledge-craft",
     "class": "bordersdev\\craftpulse\\Pulse",
     "branch-alias": {
       "dev-main": "2.x-dev"
