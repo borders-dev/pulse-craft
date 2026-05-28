@@ -22,19 +22,28 @@ class LicenseCheck implements CheckInterface
 
             $licenseInfo = Craft::$app->getCache()->get(App::CACHE_KEY_LICENSE_INFO);
             $licenseInfo = is_array($licenseInfo) ? $licenseInfo : [];
-            $licenseKeyStatus = $this->normalizeStatus($licenseInfo['craft']['status'] ?? null);
+            $craft = is_array($licenseInfo['craft'] ?? null) ? $licenseInfo['craft'] : [];
 
-            $rawLicensedEdition = Craft::$app->getLicensedEdition();
-            $licensedEdition = $rawLicensedEdition !== null ? App::editionName($rawLicensedEdition) : null;
-            $currentEdition = App::editionName(Craft::$app->getEdition());
+            $licenseKeyStatus = $this->normalizeStatus($craft['status'] ?? null);
+            $licensedEdition = is_string($craft['edition'] ?? null) ? $craft['edition'] : null;
+            $currentEdition = $this->editionLabel(Craft::$app->getEdition());
 
             $pluginLicenses = [];
             foreach ($pluginsService->getAllPlugins() as $handle => $plugin) {
                 $info = $pluginsService->getPluginInfo($handle);
                 $hasKey = $pluginsService->getPluginLicenseKey($handle) !== null;
+                $timestamp = $licenseInfo['plugin-' . $handle]['timestamp'] ?? null;
+
                 $pluginLicenses[$handle] = [
                     'name' => $plugin->name,
+                    'version' => $plugin->version,
                     'licenseKeyStatus' => $this->resolveStatus($info['licenseKeyStatus'] ?? null, $hasKey),
+                    'hasLicenseKey' => $hasKey,
+                    'licensedEdition' => $info['licensedEdition'] ?? null,
+                    'edition' => $info['edition'] ?? null,
+                    'isTrial' => (bool)($info['isTrial'] ?? false),
+                    'licenseIssues' => $info['licenseIssues'] ?? [],
+                    'lastChecked' => is_int($timestamp) ? date('c', $timestamp) : null,
                 ];
             }
 
@@ -46,7 +55,6 @@ class LicenseCheck implements CheckInterface
                 }
             }
 
-            $editionMismatch = $licensedEdition !== null && $licensedEdition !== $currentEdition;
             $craftData = [
                 'status' => $licenseKeyStatus,
                 'licensedEdition' => $licensedEdition,
@@ -58,7 +66,10 @@ class LicenseCheck implements CheckInterface
                 'plugins' => $pluginLicenses,
             ];
 
-            if ($licenseKeyStatus === 'invalid' || $editionMismatch || $hasInvalidPluginLicense) {
+            $editionMismatch = $licensedEdition !== null && $licensedEdition !== $currentEdition;
+
+            $invalidStatuses = ['invalid', 'mismatched', 'astray'];
+            if (in_array($licenseKeyStatus, $invalidStatuses, true) || $editionMismatch || $hasInvalidPluginLicense) {
                 return CheckResult::unhealthy($this->getName(), $meta, 'License issue detected');
             }
 
@@ -67,6 +78,15 @@ class LicenseCheck implements CheckInterface
             Craft::error('Ledge license check failed: ' . $e->getMessage(), __METHOD__);
             return CheckResult::degraded($this->getName(), [], 'Check unavailable');
         }
+    }
+
+    private function editionLabel(mixed $edition): ?string
+    {
+        if ($edition instanceof \BackedEnum) {
+            $edition = $edition->value;
+        }
+
+        return is_int($edition) ? strtolower(App::editionName($edition)) : null;
     }
 
     private function resolveStatus(mixed $status, bool $hasKey): string

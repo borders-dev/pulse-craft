@@ -1,6 +1,12 @@
 # Release Notes for Ledge
 
-## 5.0.2
+## 5.0.3
+- License check now reads real plugin statuses via `Plugins::getPluginInfo()` (Craft 5's `getPluginLicenseKeyStatus()` always returns `Unknown`)
+- Craft license status now read from the `licenseInfo` cache (`App::CACHE_KEY_LICENSE_INFO`) instead of a nonexistent cache key, fixing the bogus `status: false`
+- Plugin `licenseKeyStatus` of `unknown` is now resolved to `none` (no license key) or `unverified` (key present but not yet validated by Craft)
+- Craft license `mismatched`/`astray` statuses now flag the check as unhealthy (previously only `invalid` did)
+- Licensed edition is now read from the `licenseInfo` cache (a string) rather than `getLicensedEdition()`, avoiding `int` vs `CmsEdition` type errors; a mismatch between the licensed and running edition still flags the check unhealthy
+- Per-plugin output now includes version, licensed edition, active edition, trial flag, license issues, and last-checked timestamp; the raw license key is intentionally excluded (a `hasLicenseKey` boolean is reported instead)
 - Environment check now treats a referenced var as defined when its `CRAFT_`-prefixed equivalent is set (or vice versa), preventing false positives for sites using `CRAFT_DB_*` style env vars
 - Environment check returns `degraded` instead of `unhealthy` when variables are referenced but not defined
 - Added an `ignoredEnvVars` setting to suppress specific environment variables from the check
