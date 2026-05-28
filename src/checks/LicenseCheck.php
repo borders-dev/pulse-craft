@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ledgehq\craftledge\checks;
 
 use Craft;
+use craft\helpers\App;
 use Throwable;
 
 class LicenseCheck implements CheckInterface
@@ -17,18 +18,23 @@ class LicenseCheck implements CheckInterface
     public function run(): ?CheckResult
     {
         try {
-            $licenseKeyStatus = Craft::$app->getCache()->get('licenseKeyStatus') ?? 'unknown';
-            $rawLicensedEdition = Craft::$app->getLicensedEdition();
-            $rawCurrentEdition = Craft::$app->getEdition();
+            $pluginsService = Craft::$app->getPlugins();
 
-            $licensedEdition = $rawLicensedEdition instanceof \BackedEnum ? $rawLicensedEdition->value : $rawLicensedEdition;
-            $currentEdition = $rawCurrentEdition instanceof \BackedEnum ? $rawCurrentEdition->value : $rawCurrentEdition;
+            $licenseInfo = Craft::$app->getCache()->get(App::CACHE_KEY_LICENSE_INFO);
+            $licenseInfo = is_array($licenseInfo) ? $licenseInfo : [];
+            $licenseKeyStatus = $this->normalizeStatus($licenseInfo['craft']['status'] ?? null);
+
+            $rawLicensedEdition = Craft::$app->getLicensedEdition();
+            $licensedEdition = $rawLicensedEdition !== null ? App::editionName($rawLicensedEdition) : null;
+            $currentEdition = App::editionName(Craft::$app->getEdition());
 
             $pluginLicenses = [];
-            foreach (Craft::$app->getPlugins()->getAllPlugins() as $handle => $plugin) {
+            foreach ($pluginsService->getAllPlugins() as $handle => $plugin) {
+                $info = $pluginsService->getPluginInfo($handle);
+                $hasKey = $pluginsService->getPluginLicenseKey($handle) !== null;
                 $pluginLicenses[$handle] = [
                     'name' => $plugin->name,
-                    'licenseKeyStatus' => $plugin->licenseKeyStatus ?? 'unknown',
+                    'licenseKeyStatus' => $this->resolveStatus($info['licenseKeyStatus'] ?? null, $hasKey),
                 ];
             }
 
@@ -61,5 +67,25 @@ class LicenseCheck implements CheckInterface
             Craft::error('Ledge license check failed: ' . $e->getMessage(), __METHOD__);
             return CheckResult::degraded($this->getName(), [], 'Check unavailable');
         }
+    }
+
+    private function resolveStatus(mixed $status, bool $hasKey): string
+    {
+        $status = $this->normalizeStatus($status);
+
+        if ($status === 'unknown') {
+            return $hasKey ? 'unverified' : 'none';
+        }
+
+        return $status;
+    }
+
+    private function normalizeStatus(mixed $status): string
+    {
+        if ($status instanceof \BackedEnum) {
+            return (string)$status->value;
+        }
+
+        return is_string($status) && $status !== '' ? $status : 'unknown';
     }
 }
