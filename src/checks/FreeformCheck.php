@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace ledgehq\craftledge\checks;
 
 use Craft;
-use craft\db\Query;
+use Solspace\Freeform\Freeform;
 use Throwable;
 
 class FreeformCheck implements CheckInterface
@@ -18,42 +18,42 @@ class FreeformCheck implements CheckInterface
     public function run(): ?CheckResult
     {
         $plugin = Craft::$app->getPlugins()->getPlugin('freeform');
-        if ($plugin === null) {
+        if ($plugin === null || !class_exists(Freeform::class)) {
             return null;
         }
 
         try {
-            $failedNotifications = (new Query())
-                ->from('{{%freeform_notifications_log}}')
-                ->where(['success' => false])
-                ->count();
+            $logger = Freeform::getInstance()->logger;
+
+            $errorCount = $logger->getCombinedLogLineCount(['error']);
 
             $meta = [
                 'installed' => true,
-                'failedNotifications' => (int) $failedNotifications,
+                'errorLogCount' => $logger->getLogReader()->count(),
+                'integrationsLogCount' => $logger->getLogReader('freeform-integrations.log')->count(),
+                'emailLogCount' => $logger->getLogReader('freeform-email.log')->count(),
+                'errors' => $errorCount,
             ];
         } catch (Throwable) {
             return CheckResult::degraded($this->getName(), [
                 'installed' => true,
-                'error' => 'Unable to query Freeform data',
-            ], 'Unable to query Freeform data');
+                'error' => 'Unable to read Freeform logs',
+            ], 'Unable to read Freeform logs');
         }
 
-        $failures = $meta['failedNotifications'];
-
-        if ($failures > 10) {
+        if ($errorCount > 10) {
             return CheckResult::unhealthy(
                 $this->getName(),
                 $meta,
-                "{$failures} failed notification(s) detected"
+                "{$errorCount} Freeform error(s) logged"
             );
         }
 
-        if ($failures > 0) {
+        if ($errorCount > 0) {
             return CheckResult::degraded(
                 $this->getName(),
                 $meta,
-                "{$failures} failed notification(s) detected"
+                "{$errorCount} Freeform error(s) logged"
             );
         }
 

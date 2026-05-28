@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 5.0.4
+- Freeform check now reads error counts from Freeform's logs via `LoggerService` (`getCombinedLogLineCount(['error'])`) instead of querying nonexistent `freeform_*` tables, fixing the bogus `degraded` "Unable to query Freeform data" result; per-log line totals are reported in the output as context
+
 ## 5.0.3
 - License check now reads real plugin statuses via `Plugins::getPluginInfo()` (Craft 5's `getPluginLicenseKeyStatus()` always returns `Unknown`)
 - Craft license status now read from the `licenseInfo` cache (`App::CACHE_KEY_LICENSE_INFO`) instead of a nonexistent cache key, fixing the bogus `status: false`
