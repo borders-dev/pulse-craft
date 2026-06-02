@@ -23,7 +23,15 @@ class FreeformCheck implements CheckInterface
         }
 
         try {
-            $logger = Freeform::getInstance()->logger;
+            $freeform = Freeform::getInstance();
+            if ($freeform === null) {
+                return CheckResult::degraded(
+                    $this->getName(),
+                    ['installed' => true],
+                    'Freeform instance unavailable'
+                );
+            }
+            $logger = $freeform->logger;
 
             $errorCount = $logger->getCombinedLogLineCount(['error']);
 

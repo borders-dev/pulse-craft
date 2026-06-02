@@ -1,5 +1,9 @@
 # Release Notes for Ledge
 
+## 5.0.5
+- Environment check no longer reports a var as missing when another scanned config file resolves it (cross-file resolution)
+- Freeform and environment checks now explicitly null-guard `Freeform::getInstance()` / `Ledge::getInstance()` and report a clearer degraded result on cold-path failures instead of relying on the outer `Throwable` catch
+
 ## 5.0.4
 - Freeform check now reads error counts from Freeform's logs via `LoggerService` (`getCombinedLogLineCount(['error'])`) instead of querying nonexistent `freeform_*` tables, fixing the bogus `degraded` "Unable to query Freeform data" result; per-log line totals are reported in the output as context
 

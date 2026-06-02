@@ -59,8 +59,9 @@ class EnvironmentCheck implements CheckInterface
                 }
             }
 
-            $settings = Ledge::getInstance()->getSettings();
-            $missing = array_values(array_diff(array_keys($missingVars), $settings->ignoredEnvVars));
+            $instance = Ledge::getInstance();
+            $ignored = $instance !== null ? $instance->getSettings()->ignoredEnvVars : [];
+            $missing = array_values(array_diff(array_keys($missingVars), array_keys($definedVars), $ignored));
             $defined = array_keys($definedVars);
 
             $meta = [
