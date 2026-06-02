@@ -1,5 +1,24 @@
 # Release Notes for Ledge
 
+## 4.0.5
+- Environment check no longer reports a var as missing when another scanned config file resolves it (cross-file resolution)
+- Freeform and environment checks now explicitly null-guard `Freeform::getInstance()` / `Ledge::getInstance()` and report a clearer degraded result on cold-path failures instead of relying on the outer `Throwable` catch
+
+## 4.0.4
+- Freeform check now reads error counts from Freeform's logs via `LoggerService` (`getCombinedLogLineCount(['error'])`) instead of querying nonexistent `freeform_*` tables, fixing the bogus `degraded` "Unable to query Freeform data" result; per-log line totals are reported in the output as context
+
+## 4.0.3
+- License check now reads real plugin statuses via `Plugins::getPluginInfo()` (richer per-plugin metadata than `$plugin->licenseKeyStatus` alone)
+- Craft license status now read from the `licenseInfo` cache (`App::CACHE_KEY_LICENSE_INFO`) instead of a nonexistent cache key, fixing the bogus `status: false`
+- Plugin `licenseKeyStatus` of `unknown` is now resolved to `none` (no license key) or `unverified` (key present but not yet validated by Craft)
+- Craft license `mismatched`/`astray` statuses now flag the check as unhealthy (previously only `invalid` did)
+- Licensed edition is now read from the `licenseInfo` cache (a string) rather than `getLicensedEdition()`; a mismatch between the licensed and running edition still flags the check unhealthy
+- Per-plugin output now includes version, licensed edition, active edition, trial flag, license issues, and last-checked timestamp; the raw license key is intentionally excluded (a `hasLicenseKey` boolean is reported instead)
+- Environment check now treats a referenced var as defined when its `CRAFT_`-prefixed equivalent is set (or vice versa), preventing false positives for sites using `CRAFT_DB_*` style env vars
+- Environment check returns `degraded` instead of `unhealthy` when variables are referenced but not defined
+- Added an `ignoredEnvVars` setting to suppress specific environment variables from the check
+- `craftVersion` check now wraps edition retrieval in try/catch, returning a `degraded` "Check unavailable" result on failure instead of bubbling the exception
+
 ## 4.0.0
 - Renamed plugin from Pulse to Ledge
 - Versioning now tracks the Craft major version (this is the Craft 4 line; see the `5.x` branch for Craft 5)

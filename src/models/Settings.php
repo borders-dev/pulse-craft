@@ -28,6 +28,7 @@ class Settings extends Model
         'formie' => true,
         'freeform' => true,
     ];
+    public array $ignoredEnvVars = [];
 
     public function getSecretKey(): ?string
     {

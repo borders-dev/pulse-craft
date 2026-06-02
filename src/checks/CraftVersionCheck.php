@@ -17,8 +17,13 @@ class CraftVersionCheck implements CheckInterface
 
     public function run(): ?CheckResult
     {
-        $currentVersion = Craft::$app->getVersion();
-        $edition = App::editionName(Craft::$app->getEdition());
+        try {
+            $currentVersion = Craft::$app->getVersion();
+            $edition = App::editionName(Craft::$app->getEdition());
+        } catch (Throwable $e) {
+            Craft::error('Ledge craftVersion check failed: ' . $e->getMessage(), __METHOD__);
+            return CheckResult::degraded($this->getName(), [], 'Check unavailable');
+        }
 
         try {
             $updates = Craft::$app->getUpdates()->getUpdates(false);
