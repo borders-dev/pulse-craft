@@ -23,8 +23,10 @@ class FormieCheck implements CheckInterface
 
         try {
             $failedNotifications = (new Query())
-                ->from('{{%formie_sentnotifications}}')
-                ->where(['success' => false])
+                ->from(['sn' => '{{%formie_sentnotifications}}'])
+                ->innerJoin(['e' => '{{%elements}}'], '[[e.id]] = [[sn.id]]')
+                ->where(['sn.success' => false])
+                ->andWhere(['e.dateDeleted' => null])
                 ->count();
 
             $meta = [
