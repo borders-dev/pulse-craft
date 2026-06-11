@@ -7,3 +7,5 @@ composer.lock
 .phpunit.result.cache
 /vendor/
 .claude/settings.local.json
+/sample-dbs/
+.DS_Store
