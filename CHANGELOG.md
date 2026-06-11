@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 5.0.6
+- Formie check now excludes trashed (soft-deleted) sent notifications from its failed-notification count by joining `elements` and filtering on `dateDeleted`, so resolving failures by trashing them in the Formie control panel clears the check
+
 ## 5.0.5
 - Environment check no longer reports a var as missing when another scanned config file resolves it (cross-file resolution)
 - Freeform and environment checks now explicitly null-guard `Freeform::getInstance()` / `Ledge::getInstance()` and report a clearer degraded result on cold-path failures instead of relying on the outer `Throwable` catch
