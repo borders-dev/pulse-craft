@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 4.0.7
+- Health endpoint now sends no-cache headers so it is never served from Craft Cloud's static page cache
+
 ## 4.0.6
 - Formie check now excludes trashed (soft-deleted) sent notifications from its failed-notification count by joining `elements` and filtering on `dateDeleted`, so resolving failures by trashing them in the Formie control panel clears the check
 

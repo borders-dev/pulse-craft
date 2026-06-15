@@ -19,6 +19,8 @@ class HealthController extends Controller
             return false;
         }
 
+        Craft::$app->getResponse()->setNoCacheHeaders();
+
         if ($action->id === 'index') {
             $error = $this->validateSecretKey();
             if ($error !== null) {
