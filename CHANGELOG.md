@@ -1,7 +1,7 @@
 # Release Notes for Ledge
 
 ## 5.0.7
-- Health endpoint now sends no-cache headers (`Response::setNoCacheHeaders()`) so it is never served from Craft Cloud's static page cache; the cache key ignores the `X-Ledge-Key` header, so a cached `200` would otherwise return stale data and bypass authentication
+- Health endpoint now sends no-cache headers (`Response::setNoCacheHeaders()`) so it is never served from Craft Cloud's static page cache; the cache key ignores the `X-Ledge-Key` header, so a cached `200` would otherwise return stale data and bypass authentication.
 
 ## 5.0.6
 - Formie check now excludes trashed (soft-deleted) sent notifications from its failed-notification count by joining `elements` and filtering on `dateDeleted`, so resolving failures by trashing them in the Formie control panel clears the check
