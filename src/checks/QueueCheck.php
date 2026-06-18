@@ -9,6 +9,7 @@ use Craft;
 use craft\helpers\DateTimeHelper;
 use craft\queue\Queue;
 use Throwable;
+use yii\db\Expression;
 use yii\db\Query;
 
 class QueueCheck implements CheckInterface
@@ -34,12 +35,18 @@ class QueueCheck implements CheckInterface
             $failed = $queue->getTotalFailed();
             $settings = Ledge::getInstance()->getSettings();
             $ageThreshold = $settings->queueAgeThreshold;
-            $cutoff = DateTimeHelper::currentTimeStamp() - $ageThreshold;
+            $now = DateTimeHelper::currentTimeStamp();
+            $cutoff = $now - $ageThreshold;
 
             $stale = (int)(new Query())
                 ->from($queue->tableName)
-                ->where(['channel' => $queue->channel, 'fail' => false, 'timeUpdated' => null])
+                ->where(['channel' => $this->resolveChannel($queue), 'fail' => false])
                 ->andWhere('[[timePushed]] + [[delay]] <= :cutoff', [':cutoff' => $cutoff])
+                ->andWhere([
+                    'or',
+                    ['timeUpdated' => null],
+                    new Expression('[[timeUpdated]] + [[ttr]] <= :now', [':now' => $now]),
+                ])
                 ->count();
 
             $meta = [
@@ -66,5 +73,28 @@ class QueueCheck implements CheckInterface
                 'Queue check failed'
             );
         }
+    }
+
+    /**
+     * Resolves the `channel` column value Craft actually stores jobs under.
+     *
+     * Craft\queue\Queue::$channel is null by default and its real channel is
+     * resolved internally via a private channel()/componentId() that falls back
+     * to the queue's application component ID. Reading the public $channel
+     * property directly would yield null and match no rows.
+     */
+    private function resolveChannel(Queue $queue): string
+    {
+        if ($queue->channel !== null) {
+            return $queue->channel;
+        }
+
+        foreach (Craft::$app->getComponents(false) as $id => $component) {
+            if ($component === $queue) {
+                return $id;
+            }
+        }
+
+        return 'queue';
     }
 }
