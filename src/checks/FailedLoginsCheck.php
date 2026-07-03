@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace ledgehq\craftledge\checks;
 
-use ledgehq\craftledge\Ledge;
 use Craft;
 use craft\db\Query;
 use DateTime;
+use ledgehq\craftledge\Ledge;
 use Throwable;
 
 class FailedLoginsCheck implements CheckInterface

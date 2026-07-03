@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace ledgehq\craftledge\checks;
 
-use ledgehq\craftledge\Ledge;
 use Craft;
 use craft\helpers\DateTimeHelper;
 use craft\queue\Queue;
+use ledgehq\craftledge\Ledge;
 use Throwable;
 use yii\db\Expression;
 use yii\db\Query;
