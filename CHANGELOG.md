@@ -1,5 +1,15 @@
 # Release Notes for Ledge
 
+## Unreleased
+- Added the acquire capability: Ledge can command the site to produce an encrypted bundle (full DB dump + env manifest) and push it to object storage for automated update testing
+  - `POST /_ledge/acquire` accepts Ed25519-signed commands (`{command, signature}`, detached signature over canonical JSON minus `callback_token`); signing keys are discovered from Ledge's `/.well-known/ledge-keys` keyset (keyed by `key_id`) — the keyset base URL (`ledgeBaseUrl`) is file-config only and never derived from a command. Learned key pins never expire: a known `key_id` is never re-mapped to different key material (rotation = new `key_id`); only the fetched-keyset discovery cache has a TTL (24h)
+  - Verification chain: shared key → key discovery → signature → expiry → replay protection (persisted `run_id`s in a new `ledge_acquisitions` table) → host allowlist (`acquireAllowedHosts`) for both `upload_url` and `callback_url`; failures return machine-readable reasons and are logged; with no allowlist configured every command is rejected
+  - Bundling runs as `AcquireBundleJob` on Craft's queue: preflight (dump command, disk headroom, tmp dir, sodium) → `mysqldump` via Craft's backup pipeline → env/facts manifest (all env vars by default, narrowed by an operator-configured `acquireEnvDenylist`; the plugin's own `LEDGE_*` auth material is always excluded) → gzipped tar encrypted with a sealed-key + secretstream construction to the command's `bundle_pubkey` → streamed PUT to `upload_url`; temp files cleaned up on success and failure
+  - Best-effort bearer-authenticated callbacks (`acquire.accepted|started|progress|completed|failed`) plus a `GET /_ledge/acquire/<run_id>` status endpoint as pull fallback
+  - See `docs/acquire-protocol.md` for the wire protocol, bundle format, and signing snippets
+- `/health` now includes the project-config `configVersion` (staleness signal for open update PRs)
+- Added a PHPUnit test suite covering the acquire protocol core (`composer test`)
+
 ## 5.0.7.2
 - Queue check now resolves the queue's effective `channel` the way Craft does internally (falling back to the application component ID when `Queue::$channel` is null) instead of reading the public `$channel` property directly. Previously the property was `null`, so the stale-jobs query filtered on an empty channel and matched no rows — reporting `stale: 0` and `healthy` even when hundreds of jobs were stuck
 - Queue check now also flags reserved-but-abandoned jobs as stale (a job whose reservation has expired, `timeUpdated + ttr <= now`), not just jobs that were never reserved

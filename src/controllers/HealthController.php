@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace ledgehq\craftledge\controllers;
 
-use ledgehq\craftledge\Ledge;
 use Craft;
 use craft\web\Controller;
+use ledgehq\craftledge\Ledge;
 use yii\web\Response;
 
 class HealthController extends Controller
