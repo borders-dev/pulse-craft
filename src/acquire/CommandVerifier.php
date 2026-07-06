@@ -18,6 +18,8 @@ use Throwable;
  */
 class CommandVerifier
 {
+    public const SUPPORTED_PROFILES = ['full', 'backup'];
+
     private const RUN_ID_PATTERN = '/^[A-Za-z0-9\-]{1,64}$/';
     private const REQUIRED_FIELDS = [
         'run_id',
@@ -71,7 +73,7 @@ class CommandVerifier
             throw new AcquireException('expired', 403);
         }
 
-        if ($command->profile !== 'full') {
+        if (!in_array($command->profile, self::SUPPORTED_PROFILES, true)) {
             throw new AcquireException('invalid_profile', 400, "unsupported profile \"{$command->profile}\"");
         }
 

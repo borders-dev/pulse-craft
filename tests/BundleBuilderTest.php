@@ -35,11 +35,11 @@ final class BundleBuilderTest extends TestCase
         $dumpPath = $this->workspace->path('dump.sql');
         file_put_contents($dumpPath, $dumpContent);
 
-        $manifest = ['env' => ['CRAFT_ENVIRONMENT' => 'production'], 'configVersion' => 'abc123'];
+        $manifestPath = $this->workspace->path('manifest.json');
+        file_put_contents($manifestPath, '{"configVersion":"abc123"}');
 
         $result = (new BundleBuilder())->build(
-            $dumpPath,
-            $manifest,
+            ['dump.sql' => $dumpPath, 'manifest.json' => $manifestPath],
             sodium_crypto_box_publickey($keypair),
             PHP_INT_MAX,
             $this->workspace,
@@ -48,11 +48,31 @@ final class BundleBuilderTest extends TestCase
         $this->assertFileExists($result->path);
         $this->assertSame(filesize($result->path), $result->size);
         $this->assertSame(hash_file('sha256', $result->path), $result->sha256);
+        $this->assertGreaterThan(0, $result->uncompressedSize);
 
-        [$decryptedDump, $decryptedManifest] = $this->decryptBundle($result->path, $keypair);
+        $extractDir = $this->decryptBundle($result->path, $keypair);
 
-        $this->assertSame($dumpContent, $decryptedDump);
-        $this->assertSame($manifest, json_decode($decryptedManifest, true));
+        $this->assertSame($dumpContent, (string)file_get_contents($extractDir . '/dump.sql'));
+        $this->assertSame('{"configVersion":"abc123"}', (string)file_get_contents($extractDir . '/manifest.json'));
+    }
+
+    public function testDatabaseOnlyBundleContainsJustTheDump(): void
+    {
+        $keypair = sodium_crypto_box_keypair();
+        $dumpPath = $this->workspace->path('dump.sql');
+        file_put_contents($dumpPath, 'DUMP');
+
+        $result = (new BundleBuilder())->build(
+            ['dump.sql' => $dumpPath],
+            sodium_crypto_box_publickey($keypair),
+            PHP_INT_MAX,
+            $this->workspace,
+        );
+
+        $extractDir = $this->decryptBundle($result->path, $keypair);
+
+        $this->assertSame('DUMP', (string)file_get_contents($extractDir . '/dump.sql'));
+        $this->assertSame(['dump.sql'], $this->archiveNames($extractDir));
     }
 
     public function testOversizedBundleFailsBeforeEncryption(): void
@@ -63,8 +83,7 @@ final class BundleBuilderTest extends TestCase
 
         try {
             (new BundleBuilder())->build(
-                $dumpPath,
-                ['env' => []],
+                ['dump.sql' => $dumpPath],
                 sodium_crypto_box_publickey($keypair),
                 10,
                 $this->workspace,
@@ -78,12 +97,10 @@ final class BundleBuilderTest extends TestCase
     }
 
     /**
-     * Mirrors the decrypt logic the runner implements:
-     * unseal the symmetric key, stream-decrypt, gunzip, untar.
-     *
-     * @return array{0: string, 1: string} dump.sql and manifest.json contents
+     * Mirrors the decrypt logic the runner implements: unseal the symmetric
+     * key, stream-decrypt, gunzip, untar. Returns the extraction directory.
      */
-    private function decryptBundle(string $encryptedPath, string $keypair): array
+    private function decryptBundle(string $encryptedPath, string $keypair): string
     {
         $in = fopen($encryptedPath, 'rb');
 
@@ -112,9 +129,27 @@ final class BundleBuilderTest extends TestCase
         mkdir($extractDir);
         (new PharData($tgzPath))->extractTo($extractDir);
 
-        return [
-            (string)file_get_contents($extractDir . '/dump.sql'),
-            (string)file_get_contents($extractDir . '/manifest.json'),
-        ];
+        return $extractDir;
+    }
+
+    /**
+     * @return list<string> archive-relative file names, sorted
+     */
+    private function archiveNames(string $extractDir): array
+    {
+        $names = [];
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($extractDir, \FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($iterator as $file) {
+            if ($file->isFile()) {
+                $names[] = substr($file->getPathname(), strlen($extractDir) + 1);
+            }
+        }
+
+        sort($names);
+
+        return $names;
     }
 }

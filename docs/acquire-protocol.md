@@ -71,7 +71,7 @@ The public key is published in the keyset under a `key_id`; the secret key stays
     "expires_at": "2026-07-02T12:15:00+00:00",   // ISO8601
     "upload_url": "https://storage.ledgehq.app/bundles/<run_id>",
     "bundle_pubkey": "<base64 X25519 public key (crypto_box), 32 bytes>",
-    "profile": "full",             // only "full" is accepted for now
+    "profile": "full",             // "full" (update run) or "backup"
     "callback_url": "https://app.ledgehq.app/api/acquire/callback",
     "callback_token": "<bearer token echoed on every callback>",
     "key_id": "a1b2c3d4"
@@ -81,6 +81,19 @@ The public key is published in the keyset under a `key_id`; the secret key stays
 ```
 
 The signature covers the **canonical JSON of the command without `callback_token`**: recursively sort all keys (`ksort`), then `json_encode` with `JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE`. Excluding `callback_token` lets Ledge rotate callback tokens without re-signing; the token is still protected in transit by TLS, and `callback_url` itself *is* signed and allowlisted.
+
+## Profiles
+
+`profile` selects what the bundle is for. Verification, signing, replay guard, host allowlist, encryption, and the signed-upload flow are **identical** across profiles — only the bundle contents and the `acquire.completed` detail differ. Unknown profile values are rejected `invalid_profile`.
+
+| Profile | Purpose | Bundle contents | `acquire.completed` detail |
+|---|---|---|---|
+| `full` | Update-test run | `dump.sql` + `manifest.json` (env vars, facts, crawlable `uris`) | `{size, sha256}` |
+| `backup` | Scheduled backup | `dump.sql` **only** | `{size, sha256, compressed_size, uncompressed_size, dump_duration_ms, table_count}` |
+
+Both run the same queue job (same TTR / memory handling); distinct `run_id`s queue independently and the replay guard only fires on a repeated `run_id`.
+
+The `backup` profile is deliberately **the database and nothing else** — no env manifest, no metadata sidecar, no project config. The env manifest (the only artefact that packages potentially secret-bearing environment variables) is `full`-only; the backup code path never builds it. The bare dump still restores to a working site because Craft's project config and schema version already live inside the dump (the `projectconfig` / `info` tables). The richer `acquire.completed` detail is operational telemetry only (sizes, dump duration, table count, sealed sha256) — no site data.
 
 ## Signing (Laravel side)
 
@@ -237,5 +250,5 @@ The dev keyset is served at `https://ledge.ddev.site/.well-known/ledge-keys` aut
 5. Re-POST the same body → `409 replayed`. Change a signed field → `401 invalid_signature`. Set `expires_at` in the past → `403 expired`. Use an off-list host → `403 host_not_allowed`. Use a bogus `key_id` → `401 unknown_key_id`.
 6. `ddev craft queue/run` → callbacks arrive in order at Ledge; `GET /_ledge/acquire/<run_id>` shows `completed` with `size`/`sha256`; decrypt the uploaded object with the runner snippet and inspect `dump.sql` + `manifest.json`.
 7. Confirm `storage/runtime/ledge/` is empty afterwards — including after a forced failure (e.g. unreachable `upload_url`).
-8. `GET /_ledge/health` root includes `platform: {name: "craftcms", version, edition}`, `configVersion`, and `acquireEnabled: true`.
+8. `GET /_ledge/health` root includes `platform: {name: "craftcms", version, edition}`, `configVersion`, `acquireEnabled: true`, and `backupProfileSupported: true` (advertises backup support so Ledge can gate scheduling on it).
 9. Set `acquireEnabled` back to `false` (or unset `LEDGE_ACQUIRE_ENABLED`) → `POST /_ledge/acquire` is a `404`, `/health` reports `acquireEnabled: false`, and the plugin behaves exactly as before the feature existed.

@@ -10,6 +10,7 @@ class BundleResult
         public readonly string $path,
         public readonly int $size,
         public readonly string $sha256,
+        public readonly int $uncompressedSize,
     ) {
     }
 }

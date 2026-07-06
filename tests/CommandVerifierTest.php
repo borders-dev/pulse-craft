@@ -135,6 +135,13 @@ final class CommandVerifierTest extends TestCase
         $this->assertRejected($envelope, 'invalid_payload', 400);
     }
 
+    public function testBackupProfileVerifies(): void
+    {
+        $command = $this->verifier()->verify($this->body($this->command(['profile' => 'backup'])));
+
+        $this->assertSame('backup', $command->profile);
+    }
+
     public function testUnsupportedProfileIsRejected(): void
     {
         $envelope = $this->body($this->command(['profile' => 'sanitized']));

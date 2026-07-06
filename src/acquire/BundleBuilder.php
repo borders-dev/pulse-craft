@@ -19,20 +19,18 @@ class BundleBuilder
 {
     public const CHUNK_SIZE = 1048576;
 
+    /**
+     * @param array<string, string> $entries archive path (relative) => absolute
+     *     source file path; e.g. `dump.sql` alone (backup) or `dump.sql` plus a
+     *     `manifest.json` sidecar (full). Insertion order is preserved.
+     */
     public function build(
-        string $dumpPath,
-        array $manifest,
+        array $entries,
         string $bundlePubkeyBytes,
         int $maxBytes,
         TempWorkspace $workspace,
     ): BundleResult {
-        $manifestPath = $workspace->path('manifest.json');
-
-        if (file_put_contents($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) === false) {
-            throw new AcquireException('tmp_not_writable', 500, $manifestPath);
-        }
-
-        $archivePath = $this->createArchive($dumpPath, $manifestPath, $workspace);
+        [$archivePath, $uncompressedSize] = $this->createArchive($entries, $workspace);
         $archiveSize = filesize($archivePath);
 
         if ($archiveSize === false) {
@@ -51,20 +49,31 @@ class BundleBuilder
             throw new AcquireException('encrypt_failed', 500, 'unable to stat encrypted bundle');
         }
 
-        return new BundleResult($encryptedPath, $size, $sha256);
+        return new BundleResult($encryptedPath, $size, $sha256, $uncompressedSize);
     }
 
-    private function createArchive(string $dumpPath, string $manifestPath, TempWorkspace $workspace): string
+    /**
+     * @param array<string, string> $entries
+     * @return array{0: string, 1: int} gzip path and uncompressed tar size
+     */
+    private function createArchive(array $entries, TempWorkspace $workspace): array
     {
         $tarPath = $workspace->path('bundle.tar');
 
         try {
             $tar = new PharData($tarPath);
-            $tar->addFile($dumpPath, 'dump.sql');
-            $tar->addFile($manifestPath, 'manifest.json');
+            foreach ($entries as $archiveName => $sourcePath) {
+                $tar->addFile($sourcePath, $archiveName);
+            }
             unset($tar);
         } catch (Throwable $e) {
             throw new AcquireException('archive_failed', 500, $e->getMessage());
+        }
+
+        $uncompressedSize = filesize($tarPath);
+
+        if ($uncompressedSize === false) {
+            throw new AcquireException('archive_failed', 500, 'unable to stat archive');
         }
 
         $gzPath = $workspace->path('bundle.tar.gz');
@@ -93,7 +102,7 @@ class BundleBuilder
         gzclose($out);
         @unlink($tarPath);
 
-        return $gzPath;
+        return [$gzPath, $uncompressedSize];
     }
 
     private function encrypt(string $archivePath, string $bundlePubkeyBytes, TempWorkspace $workspace): string

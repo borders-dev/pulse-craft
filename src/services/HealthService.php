@@ -85,6 +85,7 @@ class HealthService extends Component
             'platform' => $this->getPlatform(),
             'configVersion' => $this->getConfigVersion(),
             'acquireEnabled' => $settings->isAcquireEnabled(),
+            'backupProfileSupported' => true,
             'checks' => $results,
         ];
     }

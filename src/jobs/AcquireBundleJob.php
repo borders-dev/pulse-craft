@@ -8,7 +8,9 @@ use Craft;
 use craft\base\ElementInterface;
 use craft\queue\BaseJob;
 use ledgehq\craftledge\acquire\AcquireException;
+use ledgehq\craftledge\acquire\BackupResultBuilder;
 use ledgehq\craftledge\acquire\BundleBuilder;
+use ledgehq\craftledge\acquire\BundleResult;
 use ledgehq\craftledge\acquire\BundleUploader;
 use ledgehq\craftledge\acquire\CallbackClient;
 use ledgehq\craftledge\acquire\ManifestBuilder;
@@ -48,22 +50,22 @@ class AcquireBundleJob extends BaseJob
             $step = 'dump';
             $service->transition($this->runId, AcquisitionRecord::STATUS_RUNNING, $step);
             $dumpPath = $workspace->path('dump.sql');
+            $dumpStart = microtime(true);
             $this->createDump($dumpPath);
+            $dumpDurationMs = (int)round((microtime(true) - $dumpStart) * 1000);
             $this->setProgress($queue, 0.5);
             $callbacks->send(CallbackClient::EVENT_PROGRESS, $step);
 
             $step = 'manifest';
             $service->transition($this->runId, AcquisitionRecord::STATUS_RUNNING, $step);
-            $denylist = Ledge::getInstance()->getSettings()->getAcquireEnvDenylist();
-            $manifest = (new ManifestBuilder($denylist))->build($this->collectEnv(), $this->collectFacts());
+            $entries = $this->buildEntries($workspace, $dumpPath);
             $this->setProgress($queue, 0.6);
             $callbacks->send(CallbackClient::EVENT_PROGRESS, $step);
 
             $step = 'encrypt';
             $service->transition($this->runId, AcquisitionRecord::STATUS_RUNNING, $step);
             $result = (new BundleBuilder())->build(
-                $dumpPath,
-                $manifest,
+                $entries,
                 $this->getBundlePubkeyBytes(),
                 Ledge::getInstance()->getSettings()->acquireMaxBundleBytes,
                 $workspace,
@@ -77,10 +79,7 @@ class AcquireBundleJob extends BaseJob
             $this->setProgress($queue, 1.0);
 
             $service->transition($this->runId, AcquisitionRecord::STATUS_COMPLETED, $step, null, $result->size, $result->sha256);
-            $callbacks->send(CallbackClient::EVENT_COMPLETED, $step, [
-                'size' => $result->size,
-                'sha256' => $result->sha256,
-            ]);
+            $callbacks->send(CallbackClient::EVENT_COMPLETED, $step, $this->completedDetail($result, $dumpDurationMs));
         } catch (Throwable $e) {
             $reason = $e instanceof AcquireException ? $e->reason : 'unexpected_error';
             $detail = $e instanceof AcquireException ? $e->detail : $e->getMessage();
@@ -100,7 +99,9 @@ class AcquireBundleJob extends BaseJob
 
     protected function defaultDescription(): ?string
     {
-        return "Ledge acquisition {$this->runId}";
+        $label = $this->profile === 'backup' ? 'backup' : 'acquisition';
+
+        return "Ledge {$label} {$this->runId}";
     }
 
     private function runPreflight(TempWorkspace $workspace): void
@@ -138,6 +139,79 @@ class AcquireBundleJob extends BaseJob
             Craft::$app->getDb()->backupTo($dumpPath);
         } catch (Throwable $e) {
             throw new AcquireException('dump_failed', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Assembles the archive contents for the bundle.
+     *
+     * The `backup` profile is deliberately the database and nothing else — no
+     * env manifest, no metadata sidecar, no project config. Craft's project
+     * config and schema version already live inside the dump (projectconfig /
+     * info tables), so a bare dump still restores to a working site while
+     * carrying zero secret-bearing sidecars.
+     *
+     * The `full` (update-run) profile additionally ships the crawl manifest
+     * (env vars by denylist, facts, URIs); that manifest is never built for
+     * backups.
+     *
+     * @return array<string, string> archive name => absolute source path
+     */
+    private function buildEntries(TempWorkspace $workspace, string $dumpPath): array
+    {
+        if ($this->profile === 'backup') {
+            return ['dump.sql' => $dumpPath];
+        }
+
+        $manifestPath = $workspace->path('manifest.json');
+        $denylist = Ledge::getInstance()->getSettings()->getAcquireEnvDenylist();
+        $manifest = (new ManifestBuilder($denylist))->build($this->collectEnv(), $this->collectFacts());
+        $this->writeJson($manifestPath, $manifest);
+
+        return ['dump.sql' => $dumpPath, 'manifest.json' => $manifestPath];
+    }
+
+    private function completedDetail(BundleResult $result, int $dumpDurationMs): array
+    {
+        if ($this->profile === 'backup') {
+            return (new BackupResultBuilder())->payload($result, $dumpDurationMs, $this->countTables());
+        }
+
+        return [
+            'size' => $result->size,
+            'sha256' => $result->sha256,
+        ];
+    }
+
+    private function writeJson(string $path, array $data): void
+    {
+        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        if ($json === false || file_put_contents($path, $json) === false) {
+            throw new AcquireException('tmp_not_writable', 500, $path);
+        }
+    }
+
+    private function countTables(): ?int
+    {
+        try {
+            $db = Craft::$app->getDb();
+
+            if ($db->getIsMysql()) {
+                $count = (new Query())
+                    ->from('information_schema.TABLES')
+                    ->where('TABLE_SCHEMA = DATABASE()')
+                    ->count('*', $db);
+            } else {
+                $count = (new Query())
+                    ->from('information_schema.tables')
+                    ->where(['table_schema' => 'public'])
+                    ->count('*', $db);
+            }
+
+            return is_numeric($count) ? (int)$count : null;
+        } catch (Throwable) {
+            return null;
         }
     }
 
