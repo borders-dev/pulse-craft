@@ -144,7 +144,7 @@ Checks run in this order; the first failure wins. Errors are `{"accepted": false
 
 Success: `202 {"accepted": true, "run_id": "..."}` — the bundle job is queued on Craft's queue; nothing heavy runs in the request cycle.
 
-Job-side failure reasons (reported via callback and the status endpoint): `no_mysqldump`, `tmp_not_writable`, `insufficient_disk` (free < 2× estimated dump size), `sodium_unavailable`, `dump_failed`, `archive_failed`, `bundle_too_large`, `encrypt_failed`, `upload_failed`, `run_already_finished`, `unexpected_error`.
+Job-side failure reasons (reported via callback and the status endpoint): `no_dump_command` (mysqldump/pg_dump not resolvable), `tmp_not_writable`, `insufficient_disk` (free < 2× estimated dump size), `sodium_unavailable`, `dump_failed`, `archive_failed`, `bundle_too_large`, `encrypt_failed`, `upload_failed`, `run_already_finished`, `unexpected_error`.
 
 **Upload semantics:** the bundle is a single streamed `PUT` to `upload_url`. Any 2xx response is success and the body is ignored (the Ledge signed URL answers `201 {"ok":true,...}` today; the future S3 pre-signed PUT answers `200` with an empty body). `413` maps to `bundle_too_large`, `409` (run already finished) maps to `run_already_finished` — both terminal, no retry. Every 4xx/5xx rejection from the plugin itself carries `{"reason": "<code>"}` so Ledge can record it as the run's `failure_reason`, including unexpected errors (`unexpected_error`, 500).
 

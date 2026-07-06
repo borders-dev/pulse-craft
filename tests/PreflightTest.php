@@ -32,7 +32,7 @@ final class PreflightTest extends TestCase
 
     public function testFailsWhenDumpCommandIsNotResolvable(): void
     {
-        $this->assertFailsWith('no_mysqldump', $this->preflight(resolveDumpCommand: fn(): bool => false));
+        $this->assertFailsWith('no_dump_command', $this->preflight(resolveDumpCommand: fn(): bool => false));
     }
 
     public function testFailsWhenTmpDirIsMissing(): void

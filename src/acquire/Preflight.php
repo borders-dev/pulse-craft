@@ -20,7 +20,7 @@ class Preflight
     public function run(): void
     {
         if (!($this->resolveDumpCommand)()) {
-            throw new AcquireException('no_mysqldump', 500, 'database dump command is not resolvable');
+            throw new AcquireException('no_dump_command', 500, 'database dump command is not resolvable');
         }
 
         if (!is_dir($this->tmpDir) || !is_writable($this->tmpDir)) {
