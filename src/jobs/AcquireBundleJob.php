@@ -224,15 +224,22 @@ class AcquireBundleJob extends BaseJob
      * custom type) for every site, via Craft's element API so it stays
      * DB-engine agnostic. Each type's query defaults already restrict to
      * enabled, non-trashed, non-draft/revision elements; `uri(':notempty:')`
-     * keeps only those that resolve to a front-end URL.
+     * keeps only those that resolve to a front-end URL. `section` is the
+     * section handle for entries and null for element types that aren't
+     * organized into sections (categories, products, etc.).
      *
-     * @return list<array{uri: string, site: string}>
+     * @return list<array{uri: string, site: string, section: string|null}>
      */
     private function collectUris(): array
     {
         $siteHandles = [];
         foreach (Craft::$app->getSites()->getAllSites() as $site) {
             $siteHandles[$site->id] = $site->handle;
+        }
+
+        $sectionHandles = [];
+        foreach (Craft::$app->getEntries()->getAllSections() as $section) {
+            $sectionHandles[$section->id] = $section->handle;
         }
 
         $rows = [];
@@ -252,9 +259,11 @@ class AcquireBundleJob extends BaseJob
 
             foreach ($elements as $element) {
                 $siteId = $element['siteId'] ?? null;
+                $sectionId = $element['sectionId'] ?? null;
                 $rows[] = [
                     'uri' => $element['uri'] ?? null,
                     'siteHandle' => $siteId !== null ? ($siteHandles[$siteId] ?? null) : null,
+                    'section' => $sectionId !== null ? ($sectionHandles[$sectionId] ?? null) : null,
                 ];
             }
         }

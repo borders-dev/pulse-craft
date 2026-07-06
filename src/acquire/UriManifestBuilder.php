@@ -20,8 +20,8 @@ class UriManifestBuilder
     private const HOME_URI = '__home__';
 
     /**
-     * @param iterable<array{uri?: string|null, siteHandle?: string|null}> $rows
-     * @return list<array{uri: string, site: string}>
+     * @param iterable<array{uri?: string|null, siteHandle?: string|null, section?: string|null}> $rows
+     * @return list<array{uri: string, site: string, section: string|null}>
      */
     public function build(iterable $rows): array
     {
@@ -43,8 +43,11 @@ class UriManifestBuilder
                 continue;
             }
 
+            $section = $row['section'] ?? null;
+            $section = is_string($section) && $section !== '' ? $section : null;
+
             $seen[$key] = true;
-            $uris[] = ['uri' => $uri, 'site' => $site];
+            $uris[] = ['uri' => $uri, 'site' => $site, 'section' => $section];
         }
 
         usort($uris, static fn(array $a, array $b): int => [$a['site'], $a['uri']] <=> [$b['site'], $b['uri']]);
