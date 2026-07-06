@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ledgehq\craftledge\jobs;
 
 use Craft;
+use craft\base\ElementInterface;
 use craft\queue\BaseJob;
 use ledgehq\craftledge\acquire\AcquireException;
 use ledgehq\craftledge\acquire\BundleBuilder;
@@ -13,6 +14,7 @@ use ledgehq\craftledge\acquire\CallbackClient;
 use ledgehq\craftledge\acquire\ManifestBuilder;
 use ledgehq\craftledge\acquire\Preflight;
 use ledgehq\craftledge\acquire\TempWorkspace;
+use ledgehq\craftledge\acquire\UriManifestBuilder;
 use ledgehq\craftledge\Ledge;
 use ledgehq\craftledge\records\AcquisitionRecord;
 use Throwable;
@@ -188,7 +190,7 @@ class AcquireBundleJob extends BaseJob
             }
         }
 
-        return [
+        $facts = [
             'php' => [
                 'version' => PHP_VERSION,
                 'extensions' => $extensions,
@@ -204,5 +206,59 @@ class AcquireBundleJob extends BaseJob
             'configVersion' => Craft::$app->getInfo()->configVersion,
             'plugins' => $plugins,
         ];
+
+        // Omit `uris` entirely on catastrophic failure so the runner falls back
+        // to its own URL discovery rather than trusting an empty list.
+        try {
+            $facts['uris'] = $this->collectUris();
+        } catch (Throwable $e) {
+            Craft::warning('Ledge URI enumeration failed: ' . $e->getMessage(), __METHOD__);
+        }
+
+        return $facts;
+    }
+
+    /**
+     * Enumerates the crawlable URL of every URL-enabled element across all
+     * registered element types (entries, categories, Commerce products, any
+     * custom type) for every site, via Craft's element API so it stays
+     * DB-engine agnostic. Each type's query defaults already restrict to
+     * enabled, non-trashed, non-draft/revision elements; `uri(':notempty:')`
+     * keeps only those that resolve to a front-end URL.
+     *
+     * @return list<array{uri: string, site: string}>
+     */
+    private function collectUris(): array
+    {
+        $siteHandles = [];
+        foreach (Craft::$app->getSites()->getAllSites() as $site) {
+            $siteHandles[$site->id] = $site->handle;
+        }
+
+        $rows = [];
+
+        foreach (Craft::$app->getElements()->getAllElementTypes() as $elementType) {
+            /** @var class-string<ElementInterface> $elementType */
+            try {
+                $elements = $elementType::find()
+                    ->uri(':notempty:')
+                    ->site('*')
+                    ->asArray()
+                    ->all();
+            } catch (Throwable $e) {
+                Craft::warning("Ledge URI enumeration skipped {$elementType}: {$e->getMessage()}", __METHOD__);
+                continue;
+            }
+
+            foreach ($elements as $element) {
+                $siteId = $element['siteId'] ?? null;
+                $rows[] = [
+                    'uri' => $element['uri'] ?? null,
+                    'siteHandle' => $siteId !== null ? ($siteHandles[$siteId] ?? null) : null,
+                ];
+            }
+        }
+
+        return (new UriManifestBuilder())->build($rows);
     }
 }
