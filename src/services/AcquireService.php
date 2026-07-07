@@ -16,13 +16,20 @@ use ledgehq\craftledge\acquire\KeyResolver;
 use ledgehq\craftledge\acquire\UriManifestBuilder;
 use ledgehq\craftledge\jobs\AcquireBundleJob;
 use ledgehq\craftledge\Ledge;
-use ledgehq\craftledge\records\AcquisitionRecord;
 use Throwable;
 use yii\base\Component;
-use yii\db\IntegrityException;
 
 class AcquireService extends Component
 {
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_RUNNING = 'running';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_FAILED = 'failed';
+
+    // Run status is kept in the cache long enough for Ledge's watchdog to poll
+    // after a run finishes; the replay-guard key only lives for the command's
+    // validity window (a replay is impossible once the signature expires).
+    private const STATUS_TTL = 86400;
     private const URI_BATCH_SIZE = 100;
 
     public function accept(string $rawBody): AcquireCommand
@@ -42,12 +49,13 @@ class AcquireService extends Component
 
         $command = (new CommandVerifier($resolver->resolve(...), $allowlist))->verify($rawBody);
 
-        $this->createRecord($command);
+        $this->reserveRun($command);
 
         try {
             $this->queueJob($command, $settings->acquireJobTtr);
         } catch (Throwable $e) {
-            AcquisitionRecord::deleteAll(['runId' => $command->runId]);
+            Craft::$app->getCache()->delete(self::seenKey($command->runId));
+            Craft::$app->getCache()->delete(self::statusKey($command->runId));
             throw new AcquireException('queue_unavailable', 500, $e->getMessage());
         }
 
@@ -59,23 +67,9 @@ class AcquireService extends Component
 
     public function getStatus(string $runId): ?array
     {
-        $record = AcquisitionRecord::findOne(['runId' => $runId]);
+        $record = Craft::$app->getCache()->get(self::statusKey($runId));
 
-        if ($record === null) {
-            return null;
-        }
-
-        return [
-            'run_id' => $record->runId,
-            'status' => $record->status,
-            'step' => $record->step,
-            'detail' => $record->detail,
-            'profile' => $record->profile,
-            'size' => $record->sizeBytes !== null ? (int)$record->sizeBytes : null,
-            'sha256' => $record->sha256,
-            'dateCreated' => $record->dateCreated,
-            'dateUpdated' => $record->dateUpdated,
-        ];
+        return is_array($record) ? $record : null;
     }
 
     public function transition(
@@ -86,25 +80,34 @@ class AcquireService extends Component
         ?int $sizeBytes = null,
         ?string $sha256 = null,
     ): void {
-        $record = AcquisitionRecord::findOne(['runId' => $runId]);
+        $record = Craft::$app->getCache()->get(self::statusKey($runId));
 
-        if ($record === null) {
-            return;
+        if (!is_array($record)) {
+            // Status entry evicted (e.g. cache flush mid-run); rebuild it so the
+            // watchdog still sees live state rather than a 404.
+            $record = [
+                'run_id' => $runId,
+                'profile' => null,
+                'size' => null,
+                'sha256' => null,
+                'dateCreated' => self::now(),
+            ];
         }
 
-        $record->status = $status;
-        $record->step = $step;
-        $record->detail = $detail;
+        $record['status'] = $status;
+        $record['step'] = $step;
+        $record['detail'] = $detail;
+        $record['dateUpdated'] = self::now();
 
         if ($sizeBytes !== null) {
-            $record->sizeBytes = $sizeBytes;
+            $record['size'] = $sizeBytes;
         }
 
         if ($sha256 !== null) {
-            $record->sha256 = $sha256;
+            $record['sha256'] = $sha256;
         }
 
-        $record->save(false);
+        $this->writeStatus($runId, $record);
     }
 
     public function createCallbackClient(string $callbackUrl, string $token): CallbackClient
@@ -166,25 +169,49 @@ class AcquireService extends Component
         return (new UriManifestBuilder())->build($rows);
     }
 
-    private function createRecord(AcquireCommand $command): void
+    private function reserveRun(AcquireCommand $command): void
     {
-        if (AcquisitionRecord::findOne(['runId' => $command->runId]) !== null) {
+        // Atomic add: fails if this run_id was already seen within its validity
+        // window → replay. TTL = seconds until the command expires, since a
+        // replay is impossible once the signature's expires_at has passed.
+        $ttl = max(1, $command->expiresAt - time());
+
+        if (!Craft::$app->getCache()->add(self::seenKey($command->runId), true, $ttl)) {
             throw new AcquireException('replayed', 409);
         }
 
-        $record = new AcquisitionRecord();
-        $record->runId = $command->runId;
-        $record->status = AcquisitionRecord::STATUS_PENDING;
-        $record->step = 'queued';
-        $record->profile = $command->profile;
+        $now = self::now();
+        $this->writeStatus($command->runId, [
+            'run_id' => $command->runId,
+            'status' => self::STATUS_PENDING,
+            'step' => 'queued',
+            'detail' => null,
+            'profile' => $command->profile,
+            'size' => null,
+            'sha256' => null,
+            'dateCreated' => $now,
+            'dateUpdated' => $now,
+        ]);
+    }
 
-        try {
-            if (!$record->save(false)) {
-                throw new AcquireException('persist_failed', 500);
-            }
-        } catch (IntegrityException) {
-            throw new AcquireException('replayed', 409);
-        }
+    private function writeStatus(string $runId, array $record): void
+    {
+        Craft::$app->getCache()->set(self::statusKey($runId), $record, self::STATUS_TTL);
+    }
+
+    private static function seenKey(string $runId): string
+    {
+        return "ledge:acquire:seen:{$runId}";
+    }
+
+    private static function statusKey(string $runId): string
+    {
+        return "ledge:acquire:run:{$runId}";
+    }
+
+    private static function now(): string
+    {
+        return gmdate('Y-m-d\TH:i:s\Z');
     }
 
     private function queueJob(AcquireCommand $command, int $ttr): void

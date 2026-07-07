@@ -16,7 +16,7 @@ use ledgehq\craftledge\acquire\ManifestBuilder;
 use ledgehq\craftledge\acquire\Preflight;
 use ledgehq\craftledge\acquire\TempWorkspace;
 use ledgehq\craftledge\Ledge;
-use ledgehq\craftledge\records\AcquisitionRecord;
+use ledgehq\craftledge\services\AcquireService;
 use Throwable;
 use yii\db\Query;
 
@@ -37,7 +37,7 @@ class AcquireBundleJob extends BaseJob
         $step = 'preflight';
 
         try {
-            $service->transition($this->runId, AcquisitionRecord::STATUS_RUNNING, $step);
+            $service->transition($this->runId, AcquireService::STATUS_RUNNING, $step);
             $callbacks->send(CallbackClient::EVENT_STARTED, $step);
 
             $workspace->create();
@@ -46,7 +46,7 @@ class AcquireBundleJob extends BaseJob
             $callbacks->send(CallbackClient::EVENT_PROGRESS, $step);
 
             $step = 'dump';
-            $service->transition($this->runId, AcquisitionRecord::STATUS_RUNNING, $step);
+            $service->transition($this->runId, AcquireService::STATUS_RUNNING, $step);
             $dumpPath = $workspace->path('dump.sql');
             $dumpStart = microtime(true);
             $this->createDump($dumpPath);
@@ -55,13 +55,13 @@ class AcquireBundleJob extends BaseJob
             $callbacks->send(CallbackClient::EVENT_PROGRESS, $step);
 
             $step = 'manifest';
-            $service->transition($this->runId, AcquisitionRecord::STATUS_RUNNING, $step);
+            $service->transition($this->runId, AcquireService::STATUS_RUNNING, $step);
             $entries = $this->buildEntries($workspace, $dumpPath);
             $this->setProgress($queue, 0.6);
             $callbacks->send(CallbackClient::EVENT_PROGRESS, $step);
 
             $step = 'encrypt';
-            $service->transition($this->runId, AcquisitionRecord::STATUS_RUNNING, $step);
+            $service->transition($this->runId, AcquireService::STATUS_RUNNING, $step);
             $result = (new BundleBuilder())->build(
                 $entries,
                 $this->getBundlePubkeyBytes(),
@@ -72,18 +72,18 @@ class AcquireBundleJob extends BaseJob
             $callbacks->send(CallbackClient::EVENT_PROGRESS, $step);
 
             $step = 'upload';
-            $service->transition($this->runId, AcquisitionRecord::STATUS_RUNNING, $step);
+            $service->transition($this->runId, AcquireService::STATUS_RUNNING, $step);
             (new BundleUploader(Craft::createGuzzleClient()))->upload($result->path, $this->uploadUrl);
             $this->setProgress($queue, 1.0);
 
-            $service->transition($this->runId, AcquisitionRecord::STATUS_COMPLETED, $step, null, $result->size, $result->sha256);
+            $service->transition($this->runId, AcquireService::STATUS_COMPLETED, $step, null, $result->size, $result->sha256);
             $callbacks->send(CallbackClient::EVENT_COMPLETED, $step, $this->completedDetail($result, $dumpDurationMs));
         } catch (Throwable $e) {
             $reason = $e instanceof AcquireException ? $e->reason : 'unexpected_error';
             $detail = $e instanceof AcquireException ? $e->detail : $e->getMessage();
 
             Craft::error("Ledge acquisition {$this->runId} failed at {$step}: {$e->getMessage()}", __METHOD__);
-            $service->transition($this->runId, AcquisitionRecord::STATUS_FAILED, $step, $reason);
+            $service->transition($this->runId, AcquireService::STATUS_FAILED, $step, $reason);
             $callbacks->send(CallbackClient::EVENT_FAILED, $step, [
                 'reason' => $reason,
                 'detail' => $detail,

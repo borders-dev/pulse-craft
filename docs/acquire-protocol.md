@@ -209,7 +209,7 @@ Ledge responds `401` (bad token), `409` (run already finished — not retried), 
 
 ## Status endpoint (pull fallback)
 
-`GET /_ledge/acquire/<run_id>` with `X-Ledge-Key` header returns the persisted acquisition record:
+`GET /_ledge/acquire/<run_id>` with `X-Ledge-Key` header returns the run's current state (held in Craft's cache, ~24h TTL — the plugin keeps no persistent run history; Ledge is the system of record):
 
 ```json
 {
@@ -225,7 +225,7 @@ Ledge responds `401` (bad token), `409` (run already finished — not retried), 
 }
 ```
 
-Unknown run: `404 {"reason": "unknown_run_id"}`. This is how the watchdog distinguishes "queue never ran the job" (`pending`/`queued` forever) from "job died mid-dump" (`running` + stale `dateUpdated`) from "callbacks being dropped" (`completed` here, nothing received).
+Unknown run: `404 {"reason": "unknown_run_id"}`. This is how the watchdog distinguishes "queue never ran the job" (`pending`/`queued` forever) from "job died mid-dump" (`running` + stale `dateUpdated`) from "callbacks being dropped" (`completed` here, nothing received). Because run state is cache-backed, a cache flush mid-run can drop the entry (404 → the watchdog should treat unknown as retryable); the job transparently rebuilds it on its next transition.
 
 ## Public URIs endpoint
 
@@ -261,9 +261,8 @@ The dev keyset is served at `https://ledge.ddev.site/.well-known/ledge-keys` aut
 
 ## Manual end-to-end verification
 
-1. Configure the test site as in **Local dev** above.
-2. Apply the migration: `ddev craft migrate/up --plugin=ledge` (or reinstall the plugin) and confirm the `ledge_acquisitions` table exists.
-3. Mint a signed command from the local Ledge (or with the signing snippet above), pointing `upload_url` at a local PUT sink (with devMode on, http URLs are accepted).
+1. Configure the test site as in **Local dev** above. (No migration/table — replay and run state live in Craft's cache.)
+2. Mint a signed command from the local Ledge (or with the signing snippet above), pointing `upload_url` at a local PUT sink (with devMode on, http URLs are accepted).
 4. `curl -X POST -H "X-Ledge-Key: …" -d @body.json https://site.ddev.site/_ledge/acquire` → expect `202`.
 5. Re-POST the same body → `409 replayed`. Change a signed field → `401 invalid_signature`. Set `expires_at` in the past → `403 expired`. Use an off-list host → `403 host_not_allowed`. Use a bogus `key_id` → `401 unknown_key_id`.
 6. `ddev craft queue/run` → callbacks arrive in order at Ledge; `GET /_ledge/acquire/<run_id>` shows `completed` with `size`/`sha256`; decrypt the uploaded object with the runner snippet and inspect `dump.sql` + `manifest.json`.
