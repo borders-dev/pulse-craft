@@ -9,7 +9,7 @@ use craft\web\Controller;
 use ledgehq\craftledge\Ledge;
 use yii\web\Response;
 
-class HealthController extends Controller
+class UrisController extends Controller
 {
     protected array|bool|int $allowAnonymous = ['index'];
 
@@ -21,15 +21,21 @@ class HealthController extends Controller
 
         Craft::$app->getResponse()->setNoCacheHeaders();
 
-        if ($action->id === 'index') {
-            $error = $this->validateSecretKey();
-            if ($error !== null) {
-                $response = Craft::$app->getResponse();
-                $response->setStatusCode(401);
-                $response->format = Response::FORMAT_JSON;
-                $response->data = ['error' => $error];
-                return false;
-            }
+        if (!Ledge::getInstance()->getSettings()->isUrisEnabled()) {
+            $response = Craft::$app->getResponse();
+            $response->setStatusCode(404);
+            $response->format = Response::FORMAT_JSON;
+            $response->data = ['error' => 'Not enabled'];
+            return false;
+        }
+
+        $error = $this->validateSecretKey();
+        if ($error !== null) {
+            $response = Craft::$app->getResponse();
+            $response->setStatusCode(401);
+            $response->format = Response::FORMAT_JSON;
+            $response->data = ['error' => $error];
+            return false;
         }
 
         return true;
@@ -37,13 +43,12 @@ class HealthController extends Controller
 
     public function actionIndex(): Response
     {
-        $healthData = Ledge::getInstance()->health->runChecks();
+        $uris = Ledge::getInstance()->acquire->getPublicUris();
 
-        Craft::$app->getResponse()->setStatusCode(
-            $healthData['status'] === 'unhealthy' ? 503 : 200
-        );
-
-        return $this->asJson($healthData);
+        return $this->asJson([
+            'count' => count($uris),
+            'uris' => $uris,
+        ]);
     }
 
     private function validateSecretKey(): ?string

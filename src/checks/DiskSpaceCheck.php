@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace ledgehq\craftledge\checks;
 
-use ledgehq\craftledge\Ledge;
 use Craft;
+use ledgehq\craftledge\Ledge;
 use Throwable;
 
 class DiskSpaceCheck implements CheckInterface

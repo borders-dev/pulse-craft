@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace ledgehq\craftledge\checks;
 
-use ledgehq\craftledge\Ledge;
 use Craft;
 use craft\helpers\App;
+use ledgehq\craftledge\Ledge;
 use Throwable;
 
 class EnvironmentCheck implements CheckInterface

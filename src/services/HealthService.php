@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace ledgehq\craftledge\services;
 
+use Craft;
+use craft\helpers\App;
 use ledgehq\craftledge\checks\CheckInterface;
 use ledgehq\craftledge\checks\CheckResult;
 use ledgehq\craftledge\checks\CraftVersionCheck;
@@ -19,7 +21,6 @@ use ledgehq\craftledge\checks\MemoryCheck;
 use ledgehq\craftledge\checks\PluginVersionsCheck;
 use ledgehq\craftledge\checks\QueueCheck;
 use ledgehq\craftledge\Ledge;
-use Craft;
 use Throwable;
 use yii\base\Component;
 
@@ -81,8 +82,35 @@ class HealthService extends Component
 
         return [
             'status' => $overallStatus,
+            'platform' => $this->getPlatform(),
+            'configVersion' => $this->getConfigVersion(),
+            'acquireEnabled' => $settings->isAcquireEnabled(),
+            'backupProfileSupported' => true,
             'checks' => $results,
         ];
+    }
+
+    private function getPlatform(): array
+    {
+        $platform = ['name' => 'craftcms'];
+
+        try {
+            $platform['version'] = Craft::$app->getVersion();
+            $platform['edition'] = App::editionName(Craft::$app->getEdition());
+        } catch (Throwable) {
+            $platform += ['version' => null, 'edition' => null];
+        }
+
+        return $platform;
+    }
+
+    private function getConfigVersion(): ?string
+    {
+        try {
+            return Craft::$app->getInfo()->configVersion;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     private function determineOverallStatus(string $current, string $new): string
