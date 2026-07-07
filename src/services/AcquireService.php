@@ -23,6 +23,8 @@ use yii\db\IntegrityException;
 
 class AcquireService extends Component
 {
+    private const URI_BATCH_SIZE = 100;
+
     public function accept(string $rawBody): AcquireCommand
     {
         $settings = Ledge::getInstance()->getSettings();
@@ -139,24 +141,25 @@ class AcquireService extends Component
         foreach (Craft::$app->getElements()->getAllElementTypes() as $elementType) {
             /** @var class-string<ElementInterface> $elementType */
             try {
-                $elements = $elementType::find()
+                $query = $elementType::find()
                     ->uri(':notempty:')
                     ->site('*')
-                    ->asArray()
-                    ->all();
+                    ->asArray();
+
+                // Batch so we never materialize a whole element type's rows at
+                // once — keeps enumeration memory bounded on large sites.
+                foreach ($query->each(self::URI_BATCH_SIZE) as $element) {
+                    $siteId = $element['siteId'] ?? null;
+                    $sectionId = $element['sectionId'] ?? null;
+                    $rows[] = [
+                        'uri' => $element['uri'] ?? null,
+                        'siteHandle' => $siteId !== null ? ($siteHandles[$siteId] ?? null) : null,
+                        'section' => $sectionId !== null ? ($sectionHandles[$sectionId] ?? null) : null,
+                    ];
+                }
             } catch (Throwable $e) {
                 Craft::warning("Ledge URI enumeration skipped {$elementType}: {$e->getMessage()}", __METHOD__);
                 continue;
-            }
-
-            foreach ($elements as $element) {
-                $siteId = $element['siteId'] ?? null;
-                $sectionId = $element['sectionId'] ?? null;
-                $rows[] = [
-                    'uri' => $element['uri'] ?? null,
-                    'siteHandle' => $siteId !== null ? ($siteHandles[$siteId] ?? null) : null,
-                    'section' => $sectionId !== null ? ($sectionHandles[$sectionId] ?? null) : null,
-                ];
             }
         }
 
