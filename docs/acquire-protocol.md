@@ -227,6 +227,24 @@ Ledge responds `401` (bad token), `409` (run already finished — not retried), 
 
 Unknown run: `404 {"reason": "unknown_run_id"}`. This is how the watchdog distinguishes "queue never ran the job" (`pending`/`queued` forever) from "job died mid-dump" (`running` + stale `dateUpdated`) from "callbacks being dropped" (`completed` here, nothing received).
 
+## Public URIs endpoint
+
+`GET /_ledge/uris` with the `X-Ledge-Key` header returns the site's crawlable public URL map on demand — the same `uris` list embedded in the `full`-profile bundle, but fetchable without triggering an acquisition:
+
+```json
+{
+  "count": 342,
+  "uris": [
+    { "uri": "/", "site": "default", "section": "pages" },
+    { "uri": "/blog/hello-world", "site": "default", "section": "blog" }
+  ]
+}
+```
+
+Shared-key auth (same tier as `/health`), **not** the signed-command tier — the URLs are already public, so the endpoint only keeps the full map from being fully anonymous. The plugin always returns **all** URIs (enabled + front-end-resolvable, every URL-enabled element type across all sites); the Ledge service decides which pages it actually checks. The list can be large, which is why it is a separate on-demand endpoint rather than part of the frequently-polled `/health` payload.
+
+**Off by default.** Because it exposes the complete public URL map — including live-but-unlinked pages — the endpoint is opt-in: enable it via config (`'urisEnabled' => true`) or the `LEDGE_URIS_ENABLED` env var. While disabled the `/_ledge/uris` route is not registered (404). Enumerated via `AcquireService::getPublicUris()`; path configurable via `urisPath` (default `_ledge/uris`).
+
 ## Local dev
 
 In the test Craft site's `config/ledge.php`:

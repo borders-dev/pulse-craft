@@ -36,6 +36,8 @@ class Settings extends Model
     public array $acquireAllowedHosts = [];
     public array $acquireEnvDenylist = [];
     public string $acquirePath = '_ledge/acquire';
+    public bool $urisEnabled = false;
+    public string $urisPath = '_ledge/uris';
     public int $acquireMaxBundleBytes = 524288000;
     public int $acquireJobTtr = 3600;
 
@@ -60,6 +62,20 @@ class Settings extends Model
         }
 
         return filter_var(App::env('LEDGE_ACQUIRE_ENABLED'), FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * The public-URIs endpoint is off by default; enable it via config
+     * (`'urisEnabled' => true`) or the LEDGE_URIS_ENABLED env var. While
+     * disabled the `/_ledge/uris` route is not registered at all (404).
+     */
+    public function isUrisEnabled(): bool
+    {
+        if ($this->urisEnabled) {
+            return true;
+        }
+
+        return filter_var(App::env('LEDGE_URIS_ENABLED'), FILTER_VALIDATE_BOOLEAN);
     }
 
     /**
@@ -131,8 +147,8 @@ class Settings extends Model
     public function rules(): array
     {
         return [
-            [['endpointPath', 'acquirePath'], 'required'],
-            [['endpointPath', 'acquirePath'], 'string'],
+            [['endpointPath', 'acquirePath', 'urisPath'], 'required'],
+            [['endpointPath', 'acquirePath', 'urisPath'], 'string'],
             [['diskSpaceThreshold', 'queueAgeThreshold', 'failedLoginWindow'], 'integer'],
             [['diskSpaceThreshold'], 'integer', 'min' => 1, 'max' => 100],
             [['acquireMaxBundleBytes', 'acquireJobTtr'], 'integer', 'min' => 1],

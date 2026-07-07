@@ -63,13 +63,18 @@ class Ledge extends Plugin
     {
         $settings = $this->getSettings();
         $endpointPath = $settings->endpointPath;
+        $urisPath = $settings->isUrisEnabled() ? $settings->urisPath : null;
         $acquirePath = $settings->isAcquireEnabled() ? $settings->acquirePath : null;
 
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_SITE_URL_RULES,
-            function(RegisterUrlRulesEvent $event) use ($endpointPath, $acquirePath) {
+            function(RegisterUrlRulesEvent $event) use ($endpointPath, $urisPath, $acquirePath) {
                 $event->rules[$endpointPath] = 'ledge/health/index';
+
+                if ($urisPath !== null) {
+                    $event->rules["GET {$urisPath}"] = 'ledge/uris/index';
+                }
 
                 if ($acquirePath !== null) {
                     $event->rules["POST {$acquirePath}"] = 'ledge/acquire/index';

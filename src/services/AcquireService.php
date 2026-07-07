@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ledgehq\craftledge\services;
 
 use Craft;
+use craft\base\ElementInterface;
 use craft\queue\Queue;
 use ledgehq\craftledge\acquire\AcquireCommand;
 use ledgehq\craftledge\acquire\AcquireException;
@@ -12,6 +13,7 @@ use ledgehq\craftledge\acquire\CallbackClient;
 use ledgehq\craftledge\acquire\CommandVerifier;
 use ledgehq\craftledge\acquire\HostAllowlist;
 use ledgehq\craftledge\acquire\KeyResolver;
+use ledgehq\craftledge\acquire\UriManifestBuilder;
 use ledgehq\craftledge\jobs\AcquireBundleJob;
 use ledgehq\craftledge\Ledge;
 use ledgehq\craftledge\records\AcquisitionRecord;
@@ -106,6 +108,59 @@ class AcquireService extends Component
     public function createCallbackClient(string $callbackUrl, string $token): CallbackClient
     {
         return new CallbackClient(Craft::createGuzzleClient(), $callbackUrl, $token);
+    }
+
+    /**
+     * Enumerates the crawlable, publicly-resolvable URL of every URL-enabled
+     * element across all registered element types (entries, categories,
+     * Commerce products, any custom type) for every site, via Craft's element
+     * API so it stays DB-engine agnostic. Each type's query defaults already
+     * restrict to enabled, non-trashed, non-draft/revision elements;
+     * `uri(':notempty:')` keeps only those that resolve to a front-end URL.
+     * `section` is the section handle for entries and null for element types
+     * not organized into sections (categories, products, etc.).
+     *
+     * @return list<array{uri: string, site: string, section: string|null}>
+     */
+    public function getPublicUris(): array
+    {
+        $siteHandles = [];
+        foreach (Craft::$app->getSites()->getAllSites() as $site) {
+            $siteHandles[$site->id] = $site->handle;
+        }
+
+        $sectionHandles = [];
+        foreach (Craft::$app->getEntries()->getAllSections() as $section) {
+            $sectionHandles[$section->id] = $section->handle;
+        }
+
+        $rows = [];
+
+        foreach (Craft::$app->getElements()->getAllElementTypes() as $elementType) {
+            /** @var class-string<ElementInterface> $elementType */
+            try {
+                $elements = $elementType::find()
+                    ->uri(':notempty:')
+                    ->site('*')
+                    ->asArray()
+                    ->all();
+            } catch (Throwable $e) {
+                Craft::warning("Ledge URI enumeration skipped {$elementType}: {$e->getMessage()}", __METHOD__);
+                continue;
+            }
+
+            foreach ($elements as $element) {
+                $siteId = $element['siteId'] ?? null;
+                $sectionId = $element['sectionId'] ?? null;
+                $rows[] = [
+                    'uri' => $element['uri'] ?? null,
+                    'siteHandle' => $siteId !== null ? ($siteHandles[$siteId] ?? null) : null,
+                    'section' => $sectionId !== null ? ($sectionHandles[$sectionId] ?? null) : null,
+                ];
+            }
+        }
+
+        return (new UriManifestBuilder())->build($rows);
     }
 
     private function createRecord(AcquireCommand $command): void
