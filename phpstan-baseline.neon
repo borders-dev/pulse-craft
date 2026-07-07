@@ -1,2 +1,16 @@
 parameters:
-	ignoreErrors: []
+	ignoreErrors:
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: src/checks/EnvironmentCheck.php
+
+		-
+			message: "#^Access to property \\$value on an unknown class BackedEnum\\.$#"
+			count: 2
+			path: src/checks/LicenseCheck.php
+
+		-
+			message: "#^Class BackedEnum not found\\.$#"
+			count: 2
+			path: src/checks/LicenseCheck.php
