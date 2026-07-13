@@ -38,6 +38,7 @@ class Settings extends Model
     public string $acquirePath = '_ledge/acquire';
     public bool $urisEnabled = false;
     public string $urisPath = '_ledge/uris';
+    public string $dependenciesPath = '_ledge/dependencies';
     public int $acquireMaxBundleBytes = 524288000;
     public int $acquireJobTtr = 3600;
 
@@ -147,8 +148,8 @@ class Settings extends Model
     public function rules(): array
     {
         return [
-            [['endpointPath', 'acquirePath', 'urisPath'], 'required'],
-            [['endpointPath', 'acquirePath', 'urisPath'], 'string'],
+            [['endpointPath', 'acquirePath', 'urisPath', 'dependenciesPath'], 'required'],
+            [['endpointPath', 'acquirePath', 'urisPath', 'dependenciesPath'], 'string'],
             [['diskSpaceThreshold', 'queueAgeThreshold', 'failedLoginWindow'], 'integer'],
             [['diskSpaceThreshold'], 'integer', 'min' => 1, 'max' => 100],
             [['acquireMaxBundleBytes', 'acquireJobTtr'], 'integer', 'min' => 1],

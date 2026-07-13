@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 5.2.0
+- Added `GET /_ledge/dependencies` (shared-key auth, configurable `dependenciesPath`): returns `{composer: [{name, version}], generatedAt, hash}` — the installed Composer package set for Ledge's security-advisory matching. Sourced strictly from Composer's runtime data (`InstalledVersions`), never a lockfile, so it reflects what is actually deployed and dev dependencies are absent on `--no-dev` production installs. Always on (same information the health payload's plugin check already exposes); capability advertised via `dependenciesSupported: true` in the health payload
+
 ## 5.1.0
 - Added the acquire capability: Ledge can command the site to produce an encrypted bundle (full DB dump + env manifest) and push it to object storage for automated update testing
   - Off by default: the whole capability is gated behind an `acquireEnabled` setting (env fallback `LEDGE_ACQUIRE_ENABLED`); while disabled the acquire routes are not registered (404) and the plugin behaves exactly as before
