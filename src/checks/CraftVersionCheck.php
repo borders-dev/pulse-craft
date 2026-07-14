@@ -38,8 +38,8 @@ class CraftVersionCheck implements CheckInterface
                 $latest = $craftUpdates->getLatest();
                 if ($latest) {
                     $latestVersion = $latest->version;
-                    $isCritical = $latest->critical ?? false;
                 }
+                $isCritical = $craftUpdates->getHasCritical();
                 $notes = $this->buildReleaseNotes($craftUpdates->releases);
             }
         } catch (Throwable) {

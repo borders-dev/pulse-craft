@@ -8,4 +8,5 @@ composer.lock
 /vendor/
 .claude/settings.local.json
 /sample-dbs/
+SITES.md
 .DS_Store
