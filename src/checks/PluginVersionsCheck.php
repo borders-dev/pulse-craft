@@ -87,7 +87,7 @@ class PluginVersionsCheck implements CheckInterface
 
         if ($hasCritical) {
             $criticalCount = count(array_filter($outdated, fn($p) => $p['isCritical']));
-            return CheckResult::degraded(
+            return CheckResult::unhealthy(
                 $this->getName(),
                 $meta,
                 "{$criticalCount} plugin(s) have critical updates"

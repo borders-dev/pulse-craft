@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 5.2.2
+- Plugin critical updates now report the `plugins` check as `unhealthy` instead of `degraded`, matching the urgency of the Craft CP's critical-update banner (and the `craftVersion` check's existing behavior for critical Craft updates)
+
 ## 5.2.1
 - Craft and plugin version checks now flag critical updates the same way the Craft control panel does (`Update::getHasCritical()`, any release between installed and latest), instead of only checking the latest release's `critical` flag. Previously a site could show Craft's red "A critical update is available" banner (e.g. Formie 3.1.6 with critical fixes in 3.1.13/3.1.14) while Ledge reported `isCritical: false` because the newest release itself wasn't critical
 
