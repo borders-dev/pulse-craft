@@ -10,6 +10,7 @@ use craft\helpers\App;
 class Settings extends Model
 {
     public const DEFAULT_LEDGE_BASE_URL = 'https://my.ledgehq.app';
+    public const DEFAULT_ACQUIRE_ALLOWED_HOSTS = ['ledgehq.app', '*.ledgehq.app'];
 
     public ?string $secretKey = null;
     public string $endpointPath = '_ledge/health';
@@ -89,6 +90,10 @@ class Settings extends Model
     }
 
     /**
+     * Defaults to the ledgehq.app domain (apex + subdomains) so acquire works
+     * out of the box once enabled; any configured or env-provided allowlist
+     * replaces the default entirely.
+     *
      * @return string[]
      */
     public function getAcquireAllowedHosts(): array
@@ -111,7 +116,7 @@ class Settings extends Model
             }
         }
 
-        return $hosts;
+        return $hosts ?: self::DEFAULT_ACQUIRE_ALLOWED_HOSTS;
     }
 
     /**
