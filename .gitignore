@@ -9,3 +9,4 @@ composer.lock
 .claude/settings.local.json
 /sample-dbs/
 .DS_Store
+SITES.md

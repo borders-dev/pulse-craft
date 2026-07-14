@@ -52,7 +52,7 @@ class PluginVersionsCheck implements CheckInterface
                     $latest = $pluginUpdates->getLatest();
                     if ($latest) {
                         $latestVersion = $latest->version;
-                        $isCritical = $latest->critical ?? false;
+                        $isCritical = $pluginUpdates->getHasCritical();
                         $notes = $this->buildReleaseNotes($pluginUpdates->releases);
 
                         if ($isCritical) {

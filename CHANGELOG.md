@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 4.1.1
+- Craft and plugin version checks now flag critical updates the same way the Craft control panel does (`Update::getHasCritical()`, any release between installed and latest), instead of only checking the latest release's `critical` flag. Previously a site could show Craft's red "A critical update is available" banner while Ledge reported `isCritical: false` because the newest release itself wasn't critical (ported from 5.2.1)
+
 ## 4.1.0
 - Ported the acquire + backup capability from the 5.x line to Craft 4 / PHP 8.0.2 (feature parity; same wire protocol)
 - Added the acquire capability: Ledge can command the site to produce an encrypted bundle (full DB dump + env manifest) and push it to object storage for automated update testing
