@@ -28,7 +28,10 @@ return [
     // LEDGE_ACQUIRE_ENABLED=true; while disabled the acquire routes are not
     // registered (404) and the plugin behaves exactly as before.
     'acquireEnabled' => true,
-    'acquireAllowedHosts' => ['app.ledgehq.app', '*.ledgehq.app'],
+
+    // Upload/callback host allowlist. Defaults to ['ledgehq.app', '*.ledgehq.app'];
+    // override only for self-hosted or dev setups:
+    // 'acquireAllowedHosts' => ['ledge.example.com'],
 
     // The manifest includes every env var by default; the plugin's own LEDGE_*
     // is always excluded. Uncomment to keep common credentials out of the
@@ -48,9 +51,9 @@ return [
 ];
 ```
 
-The `/health` payload includes `acquireEnabled` (top-level boolean) so Ledge can tell per-project whether the operator has turned acquire on. This is a stronger signal than sniffing the plugin version from the `plugins` check, which only proves the code is installed, not enabled. Note that enabling acquire also requires a non-empty `acquireAllowedHosts` for commands to be accepted — with the toggle on but no allowlist, every command is still rejected `host_not_allowed`.
+The `/health` payload includes `acquireEnabled` (top-level boolean) so Ledge can tell per-project whether the operator has turned acquire on. This is a stronger signal than sniffing the plugin version from the `plugins` check, which only proves the code is installed, not enabled.
 
-`LEDGE_ACQUIRE_ALLOWED_HOSTS` (comma-separated) works as an env fallback for the allowlist. `upload_url` and `callback_url` must be `https` (plain `http` is accepted only when Craft `devMode` is on) and their hosts must match the allowlist (exact, case-insensitive, or `*.example.com` wildcard). With an empty allowlist every command is rejected `host_not_allowed`, so the feature is inert until configured.
+The allowlist defaults to `['ledgehq.app', '*.ledgehq.app']`, so acquire works against the Ledge service out of the box once enabled. Setting `acquireAllowedHosts` (or the `LEDGE_ACQUIRE_ALLOWED_HOSTS` env fallback, comma-separated) replaces the default entirely — list the ledgehq.app entries alongside any custom hosts if both should be reachable. `upload_url` and `callback_url` must be `https` (plain `http` is accepted only when Craft `devMode` is on) and their hosts must match the allowlist (exact, case-insensitive, or `*.example.com` wildcard); non-matching commands are rejected `host_not_allowed`.
 
 ## Keypair generation (one-liner, Ledge side)
 

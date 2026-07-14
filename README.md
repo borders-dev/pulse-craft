@@ -55,10 +55,11 @@ This capability is **off by default** and higher-privilege than `/health`: every
 // config/ledge.php
 return [
     'secretKey' => '$LEDGE_SECRET_KEY',
-    'acquireEnabled' => true,                                    // or LEDGE_ACQUIRE_ENABLED=true
-    'acquireAllowedHosts' => ['app.ledgehq.app', '*.ledgehq.app'], // where bundles/callbacks may be sent
+    'acquireEnabled' => true, // or LEDGE_ACQUIRE_ENABLED=true
 ];
 ```
+
+Bundle uploads and callbacks may only be sent to allowlisted hosts; the allowlist defaults to `['ledgehq.app', '*.ledgehq.app']` and can be overridden with `acquireAllowedHosts` (or `LEDGE_ACQUIRE_ALLOWED_HOSTS`) for self-hosted or dev setups.
 
 While disabled, the acquire routes return `404` and the plugin behaves exactly as a health-only install. A companion opt-in endpoint, `GET /_ledge/uris` (enabled with `urisEnabled` / `LEDGE_URIS_ENABLED`), returns the site's crawlable public URL map on demand.
 

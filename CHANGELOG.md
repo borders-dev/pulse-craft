@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 5.2.3
+- The acquire host allowlist now defaults to `['ledgehq.app', '*.ledgehq.app']`, so acquire + backups work against the Ledge service out of the box once `acquireEnabled` is on (previously an empty allowlist rejected every command). Setting `acquireAllowedHosts` or `LEDGE_ACQUIRE_ALLOWED_HOSTS` still replaces the default entirely
+
 ## 5.2.2
 - Plugin critical updates now report the `plugins` check as `unhealthy` instead of `degraded`, matching the urgency of the Craft CP's critical-update banner (and the `craftVersion` check's existing behavior for critical Craft updates)
 
