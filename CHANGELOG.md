@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 5.2.4
+- `ledge/default/generate-key` now also appends the other Ledge env options to `.env` as commented-out lines with their defaults (`LEDGE_ACQUIRE_ENABLED`, `LEDGE_ACQUIRE_ALLOWED_HOSTS`, `LEDGE_ACQUIRE_ENV_DENYLIST`, `LEDGE_URIS_ENABLED`), skipping any already present, so the available toggles are discoverable at setup time
+
 ## 5.2.3
 - The acquire host allowlist now defaults to `['ledgehq.app', '*.ledgehq.app']`, so acquire + backups work against the Ledge service out of the box once `acquireEnabled` is on (previously an empty allowlist rejected every command). Setting `acquireAllowedHosts` or `LEDGE_ACQUIRE_ALLOWED_HOSTS` still replaces the default entirely
 
