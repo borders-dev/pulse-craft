@@ -29,6 +29,8 @@ class CraftVersionCheck implements CheckInterface
             $updates = Craft::$app->getUpdates()->getUpdates(false);
             $craftUpdates = $updates->cms;
 
+            $status = $craftUpdates->status ?? null;
+            $updateStatus = is_string($status) ? $status : null;
             $hasUpdate = $craftUpdates->getHasReleases();
             $latestVersion = null;
             $isCritical = false;
@@ -50,6 +52,7 @@ class CraftVersionCheck implements CheckInterface
                 'hasUpdate' => false,
                 'isCritical' => false,
                 'notes' => null,
+                'updateStatus' => null,
             ]);
         }
 
@@ -60,6 +63,7 @@ class CraftVersionCheck implements CheckInterface
             'hasUpdate' => $hasUpdate,
             'isCritical' => $isCritical,
             'notes' => $notes,
+            'updateStatus' => $updateStatus,
         ];
 
         if ($isCritical) {
