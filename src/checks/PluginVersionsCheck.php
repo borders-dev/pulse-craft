@@ -43,9 +43,12 @@ class PluginVersionsCheck implements CheckInterface
             $latestVersion = null;
             $isCritical = false;
             $notes = null;
+            $updateStatus = null;
 
             if ($updates !== null && isset($updates->plugins[$handle])) {
                 $pluginUpdates = $updates->plugins[$handle];
+                $status = $pluginUpdates->status ?? null;
+                $updateStatus = is_string($status) ? $status : null;
                 $hasUpdate = $pluginUpdates->getHasReleases();
 
                 if ($hasUpdate) {
@@ -65,6 +68,7 @@ class PluginVersionsCheck implements CheckInterface
                             'latest' => $latestVersion,
                             'isCritical' => $isCritical,
                             'notes' => $notes,
+                            'updateStatus' => $updateStatus,
                         ];
                     }
                 }
@@ -77,6 +81,7 @@ class PluginVersionsCheck implements CheckInterface
                 'latestVersion' => $latestVersion,
                 'isCritical' => $isCritical,
                 'notes' => $notes,
+                'updateStatus' => $updateStatus,
             ];
         }
 

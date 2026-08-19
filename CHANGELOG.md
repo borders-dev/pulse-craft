@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 5.4.0
+- The `craftVersion` check and each entry in `plugins.installed`/`plugins.outdated` now include `updateStatus`: the raw status string from Craft's update info (`eligible` / `expired` / `breakpoint`), or `null` when update info is unavailable. `expired` means an update exists but the license's one-year update window has lapsed (`craft update` would silently skip the package) — distinct from `licenseKeyStatus`, which stays `valid` in that case. Lets Ledge badge expired packages and exclude them from update runs instead of discovering the skip after a no-op update
+
 ## 5.3.0
 - `/health` root now includes `cpUrl`: the site's control panel base URL (`UrlHelper::cpUrl()` with the trailing slash trimmed), so Ledge can render an "Open Control Panel" button instead of guessing `/admin`. Craft's helper handles a renamed `cpTrigger`, a `baseCpUrl` on a different domain, and `cpTrigger: null`. The value only appears in the key-authenticated health payload, so an obscured CP trigger is not exposed publicly; its presence doubles as the capability signal (absent on older plugin versions)
 
