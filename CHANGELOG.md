@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 4.2.0
+- `/health` root now includes `cpUrl`: the site's control panel base URL (`UrlHelper::cpUrl()` with the trailing slash trimmed), so Ledge can render an "Open Control Panel" button instead of guessing `/admin`. Craft's helper handles a renamed `cpTrigger`, a `baseCpUrl` on a different domain, and `cpTrigger: null`. The value only appears in the key-authenticated health payload, so an obscured CP trigger is not exposed publicly; its presence doubles as the capability signal (absent on older plugin versions; ported from 5.3.0)
+
 ## 4.1.4
 - `ledge/default/generate-key` now also appends the other Ledge env options to `.env` as commented-out lines with their defaults (`LEDGE_ACQUIRE_ENABLED`, `LEDGE_ACQUIRE_ALLOWED_HOSTS`, `LEDGE_ACQUIRE_ENV_DENYLIST`, `LEDGE_URIS_ENABLED`), skipping any already present, so the available toggles are discoverable at setup time (ported from 5.2.4)
 

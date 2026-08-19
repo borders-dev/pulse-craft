@@ -6,6 +6,7 @@ namespace ledgehq\craftledge\services;
 
 use Craft;
 use craft\helpers\App;
+use craft\helpers\UrlHelper;
 use ledgehq\craftledge\checks\CheckInterface;
 use ledgehq\craftledge\checks\CheckResult;
 use ledgehq\craftledge\checks\CraftVersionCheck;
@@ -84,10 +85,20 @@ class HealthService extends Component
             'status' => $overallStatus,
             'platform' => $this->getPlatform(),
             'configVersion' => $this->getConfigVersion(),
+            'cpUrl' => $this->getCpUrl(),
             'acquireEnabled' => $settings->isAcquireEnabled(),
             'backupProfileSupported' => true,
             'checks' => $results,
         ];
+    }
+
+    public function getCpUrl(): ?string
+    {
+        try {
+            return rtrim(UrlHelper::cpUrl(), '/');
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     private function getPlatform(): array
