@@ -1,14 +1,15 @@
 {
   "name": "ledgehq/ledge-craft",
   "description": "Health, uptime, and compliance monitoring for your Craft CMS sites.",
+  "version": "4.4.0",
   "type": "craft-plugin",
-  "license": "mit",
+  "license": "proprietary",
   "support": {
     "email": "hello@ledgehq.app",
-    "issues": "https://github.com/ledge-hq/ledge-craft/issues?state=open",
-    "source": "https://github.com/ledge-hq/ledge-craft",
-    "docs": "https://github.com/ledge-hq/ledge-craft",
-    "rss": "https://github.com/ledge-hq/ledge-craft/releases.atom"
+    "issues": "https://github.com/ledgehq/ledge-craft/issues?state=open",
+    "source": "https://github.com/ledgehq/ledge-craft",
+    "docs": "https://github.com/ledgehq/ledge-craft",
+    "rss": "https://github.com/ledgehq/ledge-craft/releases.atom"
   },
   "require": {
     "php": ">=8.0.2",
@@ -33,7 +34,10 @@
     "handle": "ledge",
     "name": "Ledge",
     "developer": "Ledge HQ",
-    "documentationUrl": "https://github.com/ledge-hq/ledge-craft",
+    "developerUrl": "https://ledgehq.app",
+    "developerEmail": "hello@ledgehq.app",
+    "documentationUrl": "https://github.com/ledgehq/ledge-craft",
+    "changelogUrl": "https://raw.githubusercontent.com/ledgehq/ledge-craft/4.x/CHANGELOG.md",
     "class": "ledgehq\\craftledge\\Ledge"
   },
   "scripts": {
@@ -51,5 +55,6 @@
       "yiisoft/yii2-composer": true,
       "craftcms/plugin-installer": true
     }
-  }
+  },
+  "homepage": "https://ledgehq.app"
 }

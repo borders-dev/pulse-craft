@@ -1,27 +1,27 @@
 # Release Notes for Ledge
 
-## 4.4.0
+## 4.4.0 - 2026-08-28
 - The bundle manifest and `GET /_ledge/uris` now include `sites`: every Craft site as `{handle, primary, enabled, language, baseUrl, host, path}`, with `baseUrl` resolved (aliases/env vars expanded) and `host`/`path` pre-split from it (`example.com` + `/fr` for a path-mounted site, `fr.example.com` + `/` for a host-distinguished one) so a consumer can re-home sites onto sandbox hosts without re-parsing. Previously `uris` carried only a `site` handle with nothing to resolve it against, so consumers requested every URI under the primary site's host and non-primary-only pages on multi-site installs (e.g. French-only entries) showed up as 404s. Additive and absent on older plugins; the `sites` fact is omitted (never emitted empty) on enumeration failure the same way `uris` is, and consumers must treat absence as single-site
 
-## 4.3.0
+## 4.3.0 - 2026-08-19
 - The `craftVersion` check and each entry in `plugins.installed`/`plugins.outdated` now include `updateStatus`: the raw status string from Craft's update info (`eligible` / `expired` / `breakpoint`), or `null` when update info is unavailable. `expired` means an update exists but the license's one-year update window has lapsed (`craft update` would silently skip the package) — distinct from `licenseKeyStatus`, which stays `valid` in that case. Lets Ledge badge expired packages and exclude them from update runs instead of discovering the skip after a no-op update (ported from 5.4.0)
 
-## 4.2.0
+## 4.2.0 - 2026-08-18
 - `/health` root now includes `cpUrl`: the site's control panel base URL (`UrlHelper::cpUrl()` with the trailing slash trimmed), so Ledge can render an "Open Control Panel" button instead of guessing `/admin`. Craft's helper handles a renamed `cpTrigger`, a `baseCpUrl` on a different domain, and `cpTrigger: null`. The value only appears in the key-authenticated health payload, so an obscured CP trigger is not exposed publicly; its presence doubles as the capability signal (absent on older plugin versions; ported from 5.3.0)
 
-## 4.1.4
+## 4.1.4 - 2026-07-16
 - `ledge/default/generate-key` now also appends the other Ledge env options to `.env` as commented-out lines with their defaults (`LEDGE_ACQUIRE_ENABLED`, `LEDGE_ACQUIRE_ALLOWED_HOSTS`, `LEDGE_ACQUIRE_ENV_DENYLIST`, `LEDGE_URIS_ENABLED`), skipping any already present, so the available toggles are discoverable at setup time (ported from 5.2.4)
 
-## 4.1.3
+## 4.1.3 - 2026-07-14
 - The acquire host allowlist now defaults to `['ledgehq.app', '*.ledgehq.app']`, so acquire + backups work against the Ledge service out of the box once `acquireEnabled` is on (previously an empty allowlist rejected every command). Setting `acquireAllowedHosts` or `LEDGE_ACQUIRE_ALLOWED_HOSTS` still replaces the default entirely (ported from 5.2.3)
 
-## 4.1.2
+## 4.1.2 - 2026-07-14
 - Plugin critical updates now report the `plugins` check as `unhealthy` instead of `degraded`, matching the urgency of the Craft CP's critical-update banner (and the `craftVersion` check's existing behavior for critical Craft updates; ported from 5.2.2)
 
-## 4.1.1
+## 4.1.1 - 2026-07-14
 - Craft and plugin version checks now flag critical updates the same way the Craft control panel does (`Update::getHasCritical()`, any release between installed and latest), instead of only checking the latest release's `critical` flag. Previously a site could show Craft's red "A critical update is available" banner while Ledge reported `isCritical: false` because the newest release itself wasn't critical (ported from 5.2.1)
 
-## 4.1.0
+## 4.1.0 - 2026-07-07
 - Ported the acquire + backup capability from the 5.x line to Craft 4 / PHP 8.0.2 (feature parity; same wire protocol)
 - Added the acquire capability: Ledge can command the site to produce an encrypted bundle (full DB dump + env manifest) and push it to object storage for automated update testing
   - Off by default: the whole capability is gated behind an `acquireEnabled` setting (env fallback `LEDGE_ACQUIRE_ENABLED`); while disabled the acquire routes are not registered (404) and the plugin behaves exactly as before
@@ -35,24 +35,24 @@
 - `/health` root now includes: `platform` (`{name: "craftcms", version, edition}` so Ledge can identify the site type/version without digging into the checks), the project-config `configVersion` (staleness signal for open update PRs), `acquireEnabled` (whether acquire is configured and runnable on this site, so Ledge knows per-project whether it can issue acquire commands), and `backupProfileSupported` (advertises backup-profile support so Ledge can gate scheduling on it)
 - Added a PHPUnit test suite covering the acquire protocol core (`composer test`)
 
-## 4.0.7.2
+## 4.0.7.2 - 2026-07-07
 - Queue check now resolves the queue's effective `channel` the way Craft does internally (falling back to the application component ID when `Queue::$channel` is null) instead of reading the public `$channel` property directly. Previously the property was `null`, so the stale-jobs query filtered on an empty channel and matched no rows — reporting `stale: 0` and `healthy` even when hundreds of jobs were stuck
 - Queue check now also flags reserved-but-abandoned jobs as stale (a job whose reservation has expired, `timeUpdated + ttr <= now`), not just jobs that were never reserved
 
-## 4.0.7
+## 4.0.7 - 2026-06-15
 - Health endpoint now sends no-cache headers so it is never served from Craft Cloud's static page cache
 
-## 4.0.6
+## 4.0.6 - 2026-06-11
 - Formie check now excludes trashed (soft-deleted) sent notifications from its failed-notification count by joining `elements` and filtering on `dateDeleted`, so resolving failures by trashing them in the Formie control panel clears the check
 
-## 4.0.5
+## 4.0.5 - 2026-06-02
 - Environment check no longer reports a var as missing when another scanned config file resolves it (cross-file resolution)
 - Freeform and environment checks now explicitly null-guard `Freeform::getInstance()` / `Ledge::getInstance()` and report a clearer degraded result on cold-path failures instead of relying on the outer `Throwable` catch
 
-## 4.0.4
+## 4.0.4 - 2026-06-02
 - Freeform check now reads error counts from Freeform's logs via `LoggerService` (`getCombinedLogLineCount(['error'])`) instead of querying nonexistent `freeform_*` tables, fixing the bogus `degraded` "Unable to query Freeform data" result; per-log line totals are reported in the output as context
 
-## 4.0.3
+## 4.0.3 - 2026-06-02
 - License check now reads real plugin statuses via `Plugins::getPluginInfo()` (richer per-plugin metadata than `$plugin->licenseKeyStatus` alone)
 - Craft license status now read from the `licenseInfo` cache (`App::CACHE_KEY_LICENSE_INFO`) instead of a nonexistent cache key, fixing the bogus `status: false`
 - Plugin `licenseKeyStatus` of `unknown` is now resolved to `none` (no license key) or `unverified` (key present but not yet validated by Craft)
@@ -64,7 +64,7 @@
 - Added an `ignoredEnvVars` setting to suppress specific environment variables from the check
 - `craftVersion` check now wraps edition retrieval in try/catch, returning a `degraded` "Check unavailable" result on failure instead of bubbling the exception
 
-## 4.0.0
+## 4.0.0 - 2026-05-27
 - Renamed plugin from Pulse to Ledge
 - Versioning now tracks the Craft major version (this is the Craft 4 line; see the `5.x` branch for Craft 5)
 - Requires Craft CMS 4 and PHP 8.0.2+
@@ -79,21 +79,21 @@
 - Cleaned up the 401 response in `HealthController::beforeAction` to use idiomatic Yii response data flow
 - Fix queue check accessing `$queue->channel` as a property instead of calling it as a method
 
-## 0.5.3
+## 0.5.3 - 2026-05-27
 - Fix queue check: detect stale jobs via direct DB query (previously `timePushed` was not exposed by `getJobInfo()`)
 - Replace stuck threshold with configurable `queueAgeThreshold` (default 5 minutes)
 - Switch from CP settings page to `config/pulse.php` config file
 
-## 0.5.2
+## 0.5.2 - 2026-02-03
 - Run `./craft pulse/generate-key` to generate a key and save it to your `.env` file automatically
 - Always return 200 HTTP code on the endpoint
 
-## 0.5.1
+## 0.5.1 - 2026-01-29
 - Omit formie/freeform checks from response when plugin not installed
 - Include full release notes for all versions between current and latest
 - Non-critical Craft/plugin updates now report healthy instead of degraded
 
-## 0.5.0
+## 0.5.0 - 2026-01-29
 - Drop Craft 3 support (use v3 branch / 1.x releases for Craft 3)
 - Restore typed properties on plugin class and controller
 - Remove Craft 3 compatibility shims
@@ -102,21 +102,21 @@
 - Normalize edition values for consistent JSON output across Craft 4/5
 - Require Craft 4.0+ or 5.0+
 
-## 0.4.0
+## 0.4.0 - 2026-01-28
 - Split combined "forms" check into separate "formie" and "freeform" checks
 - Return degraded status when form plugin data cannot be queried
 
-## 0.3.3
+## 0.3.3 - 2026-01-28
 - Set plugin display name to "Pulse"
 
-## 0.3.2
+## 0.3.2 - 2026-01-28
 - Only report degraded status for plugins with critical updates
 - Add OS version and database version to environment check
 
-## 0.3.1
+## 0.3.1 - 2026-01-28
 - Change default endpoint from `/health` to `/_pulse/health`
 
-## 0.2.1
+## 0.2.1 - 2026-01-28
 - Remove type declarations from plugin properties for Craft 3 compatibility
 - Remove type declaration from `$allowAnonymous` controller property for Craft 3 compatibility
 - Add `method_exists()` check for `onInit()` (not available in Craft 3)
@@ -126,11 +126,11 @@
 - Add Freeform 3 support using native Freeform APIs with error details in response
 - Remove time window filter from form checks (report all errors)
 
-## 0.2.0
+## 0.2.0 - 2026-01-28
 - Add Craft 3.7+ support
 - Add `method_exists()` check for `getLicensedEdition()` (not available in Craft 3)
 
-## 0.1.0
+## 0.1.0 - 2026-01-28
 - Initial release
 - Health endpoint with secret key authentication
 - Database connectivity check
