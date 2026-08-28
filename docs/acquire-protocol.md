@@ -190,6 +190,7 @@ do {
 - `craft` — version + edition
 - `configVersion` — project-config version from the `info` table
 - `plugins` — installed plugin handles → versions
+- `sites` — every Craft site, so a consumer of `uris` can map each entry's `site` handle to a real host instead of assuming everything lives under the primary site's URL (on a multi-site install, non-primary-only pages otherwise get requested against the primary host and 404). A JSON array of `{ "handle": "besserFrench", "primary": false, "enabled": true, "language": "fr-CA", "baseUrl": "https://example.com/fr", "host": "example.com", "path": "/fr" }` objects, primary first then by handle (disabled sites included, flagged `enabled: false`): `baseUrl` is the site's resolved base URL (aliases/env vars already expanded, no trailing slash; `null` if Craft can't resolve one), and `host` (lowercase, `null` when unresolvable) and `path` (`/` for root, `/fr` for a path-mounted site) are that URL pre-split — together they let a runner re-homing every site onto sandbox hosts tell a path-mounted site (same host as the primary → keep the path) from a host-distinguished one (`fr.example.com` → needs its own sandbox host) without re-parsing. **Fallback rule:** `sites` is purely additive — absent on plugins before 5.5.0 and omitted (never emitted empty) on enumeration failure, the same way `uris` is. Consumers must treat absence as single-site and resolve every URI against the primary site's URL.
 - `uris` — every crawlable URL on the site, so the runner can crawl before/after an update instead of deriving URLs from raw SQL. A JSON array of `{ "uri": "/blog/sample-post", "site": "default", "section": "blog" }` objects: `uri` is site-root-relative with a leading slash (the homepage sentinel `__home__` is emitted as `/`), `site` is the Craft site handle, and `section` is the section handle for entries or `null` for element types not organized into sections (categories, Commerce products, etc.). Enumerated authoritatively via Craft's element API across **all** URL-enabled element types (entries, categories, Commerce products, any custom element type with a URI) for every site, filtered to enabled + not soft-deleted + non-null URI — no sampling, no cap; only exact `(uri, site)` duplicates are removed (URIs are unique per site, so `section` is deterministic for a given pair). The field is additive: a bundle with no `uris` (older plugin) just means the runner falls back to its own URL discovery. On a pathologically large site the list is correspondingly large by design — bounding it is the runner's concern.
 
 ## Callbacks
@@ -237,12 +238,19 @@ Unknown run: `404 {"reason": "unknown_run_id"}`. This is how the watchdog distin
 ```json
 {
   "count": 342,
+  "sites": [
+    { "handle": "default", "primary": true, "enabled": true, "language": "en-US", "baseUrl": "https://example.com", "host": "example.com", "path": "/" },
+    { "handle": "fr", "primary": false, "enabled": true, "language": "fr-CA", "baseUrl": "https://fr.example.com", "host": "fr.example.com", "path": "/" }
+  ],
   "uris": [
     { "uri": "/", "site": "default", "section": "pages" },
-    { "uri": "/blog/hello-world", "site": "default", "section": "blog" }
+    { "uri": "/blog/hello-world", "site": "default", "section": "blog" },
+    { "uri": "/blog/bonjour", "site": "fr", "section": "blog" }
   ]
 }
 ```
+
+`sites` is the same list as the bundle manifest's `sites` fact (see above): resolve each URI's `site` handle against it to get the host — `baseUrl + uri` is the real public URL. `count` covers `uris` only, and `sites` is omitted (not empty) when site enumeration fails or on plugins before 5.5.0.
 
 Shared-key auth (same tier as `/health`), **not** the signed-command tier — the URLs are already public, so the endpoint only keeps the full map from being fully anonymous. The plugin always returns **all** URIs (enabled + front-end-resolvable, every URL-enabled element type across all sites); the Ledge service decides which pages it actually checks. The list can be large, which is why it is a separate on-demand endpoint rather than part of the frequently-polled `/health` payload.
 

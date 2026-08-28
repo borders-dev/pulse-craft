@@ -280,8 +280,14 @@ class AcquireBundleJob extends BaseJob
             'plugins' => $plugins,
         ];
 
-        // Omit `uris` entirely on catastrophic failure so the runner falls back
-        // to its own URL discovery rather than trusting an empty list.
+        // Omit `sites`/`uris` entirely on catastrophic failure so the runner
+        // falls back to its own discovery rather than trusting an empty list.
+        try {
+            $facts['sites'] = Ledge::getInstance()->acquire->getSites();
+        } catch (Throwable $e) {
+            Craft::warning('Ledge site enumeration failed: ' . $e->getMessage(), __METHOD__);
+        }
+
         try {
             $facts['uris'] = Ledge::getInstance()->acquire->getPublicUris();
         } catch (Throwable $e) {

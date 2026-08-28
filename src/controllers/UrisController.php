@@ -7,6 +7,7 @@ namespace ledgehq\craftledge\controllers;
 use Craft;
 use craft\web\Controller;
 use ledgehq\craftledge\Ledge;
+use Throwable;
 use yii\web\Response;
 
 class UrisController extends Controller
@@ -43,12 +44,23 @@ class UrisController extends Controller
 
     public function actionIndex(): Response
     {
-        $uris = Ledge::getInstance()->acquire->getPublicUris();
+        $acquire = Ledge::getInstance()->acquire;
+        $uris = $acquire->getPublicUris();
 
-        return $this->asJson([
+        $payload = [
             'count' => count($uris),
             'uris' => $uris,
-        ]);
+        ];
+
+        // Omit `sites` entirely on failure (never emit an empty list) so the
+        // endpoint keeps serving `uris` and consumers fall back to single-site.
+        try {
+            $payload['sites'] = $acquire->getSites();
+        } catch (Throwable $e) {
+            Craft::warning('Ledge site enumeration failed: ' . $e->getMessage(), __METHOD__);
+        }
+
+        return $this->asJson($payload);
     }
 
     private function validateSecretKey(): ?string
