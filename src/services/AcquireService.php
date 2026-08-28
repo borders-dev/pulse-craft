@@ -13,6 +13,7 @@ use ledgehq\craftledge\acquire\CallbackClient;
 use ledgehq\craftledge\acquire\CommandVerifier;
 use ledgehq\craftledge\acquire\HostAllowlist;
 use ledgehq\craftledge\acquire\KeyResolver;
+use ledgehq\craftledge\acquire\SiteManifestBuilder;
 use ledgehq\craftledge\acquire\UriManifestBuilder;
 use ledgehq\craftledge\jobs\AcquireBundleJob;
 use ledgehq\craftledge\Ledge;
@@ -167,6 +168,39 @@ class AcquireService extends Component
         }
 
         return (new UriManifestBuilder())->build($rows);
+    }
+
+    /**
+     * Every Craft site with its resolved base URL, so a consumer of `uris`
+     * can map each entry's `site` handle to a host (and path prefix) instead
+     * of assuming everything lives under the primary site's URL. Aliases and
+     * env vars in `baseUrl` are expanded via Craft's site model.
+     *
+     * @return list<array{handle: string, primary: bool, enabled: bool, language: string|null, baseUrl: string|null, host: string|null, path: string}>
+     */
+    public function getSites(): array
+    {
+        $rows = [];
+
+        foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
+            $baseUrl = null;
+
+            try {
+                $baseUrl = $site->getBaseUrl();
+            } catch (Throwable $e) {
+                Craft::warning("Ledge could not resolve base URL for site {$site->handle}: {$e->getMessage()}", __METHOD__);
+            }
+
+            $rows[] = [
+                'handle' => $site->handle,
+                'primary' => (bool)$site->primary,
+                'enabled' => (bool)$site->getEnabled(),
+                'language' => $site->language,
+                'baseUrl' => $baseUrl,
+            ];
+        }
+
+        return (new SiteManifestBuilder())->build($rows);
     }
 
     private function reserveRun(AcquireCommand $command): void

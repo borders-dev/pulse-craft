@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 5.5.0
+- The bundle manifest and `GET /_ledge/uris` now include `sites`: every Craft site as `{handle, primary, enabled, language, baseUrl, host, path}`, with `baseUrl` resolved (aliases/env vars expanded) and `host`/`path` pre-split from it (`example.com` + `/fr` for a path-mounted site, `fr.example.com` + `/` for a host-distinguished one) so a consumer can re-home sites onto sandbox hosts without re-parsing. Previously `uris` carried only a `site` handle with nothing to resolve it against, so consumers requested every URI under the primary site's host and non-primary-only pages on multi-site installs (e.g. French-only entries) showed up as 404s. Additive and absent on older plugins; the `sites` fact is omitted (never emitted empty) on enumeration failure the same way `uris` is, and consumers must treat absence as single-site
+
 ## 5.4.0
 - The `craftVersion` check and each entry in `plugins.installed`/`plugins.outdated` now include `updateStatus`: the raw status string from Craft's update info (`eligible` / `expired` / `breakpoint`), or `null` when update info is unavailable. `expired` means an update exists but the license's one-year update window has lapsed (`craft update` would silently skip the package) — distinct from `licenseKeyStatus`, which stays `valid` in that case. Lets Ledge badge expired packages and exclude them from update runs instead of discovering the skip after a no-op update
 
