@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 5.8.1 - 2026-09-03
+- Fixed: a boolean option given a value that is not a recognisable boolean (e.g. `'dependenciesEnabled' => 'enabled'`, or a `$VAR` reference to an unset env var) silently became `false`. It is now logged and the default is kept, matching how invalid ints and status levels are already handled
+
 ## 5.8.0 - 2026-09-03
 - Added `composerLockHash` to the health payload root: SHA-256 of the raw bytes of the project's `composer.lock`, `null` when the file is absent or unreadable. This is a deployment-drift signal for Ledge to compare against the lockfile at the linked repository's branch head; it is deliberately separate from `dependenciesHash`, which fingerprints Composer's runtime data and drives fetch-on-change. Omitted alongside `dependenciesHash` when `dependenciesEnabled` is off
 - **Breaking:** removed `dependenciesSupported` from the health payload. Presence of `dependenciesHash` is the capability signal

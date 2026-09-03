@@ -143,6 +143,21 @@ final class SettingsTest extends TestCase
         $this->assertSame(60, $s->memoryDegradedAt);
     }
 
+    public function testUnparseableBoolKeepsDefault(): void
+    {
+        $s = Settings::fromConfig(['dependenciesEnabled' => 'enabled', 'urisEnabled' => 'yes']);
+
+        $this->assertTrue($s->isDependenciesEnabled());
+        $this->assertTrue($s->isUrisEnabled());
+    }
+
+    public function testUnresolvedVarReferenceForBoolKeepsDefault(): void
+    {
+        $s = Settings::fromConfig(['dependenciesEnabled' => '$LEDGE_DEFINITELY_UNSET_VAR']);
+
+        $this->assertTrue($s->isDependenciesEnabled());
+    }
+
     public function testExplicitFalseInConfigBeatsEnvTrueForToggles(): void
     {
         $this->env('LEDGE_ACQUIRE_ENABLED', 'true');
