@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 4.5.1 - 2026-09-03
+- Fixed: a boolean option given a value that is not a recognisable boolean (e.g. `'dependenciesEnabled' => 'enabled'`, or a `$VAR` reference to an unset env var) silently became `false`. It is now logged and the default is kept, matching how invalid ints and status levels are already handled
+
 ## 4.5.0 - 2026-09-03
 (Ports 5.2.0's dependencies endpoint and everything from 5.6.0 through 5.8.0 to the Craft 4 line.)
 - Added `GET /_ledge/dependencies` (shared-key auth, configurable `dependenciesPath`): returns `{composer: [{name, version}], generatedAt, hash}` — the installed Composer package set for Ledge's security-advisory matching. Sourced strictly from Composer's runtime data (`InstalledVersions`), never a lockfile, so it reflects what is actually deployed and dev dependencies are absent on `--no-dev` production installs. On by default (`dependenciesEnabled`); see below for the hash and toggle

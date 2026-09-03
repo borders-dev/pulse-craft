@@ -110,7 +110,7 @@ class Settings extends Model
 
         foreach (self::configurableKeys() as $key) {
             if (array_key_exists($key, $fileConfig)) {
-                $settings->$key = self::coerce($key, $fileConfig[$key]);
+                $settings->assign($key, $fileConfig[$key], 'config');
                 continue;
             }
 
@@ -120,7 +120,7 @@ class Settings extends Model
 
             $env = App::env(self::envName($key));
             if ($env !== null) {
-                $settings->$key = self::coerce($key, $env);
+                $settings->assign($key, $env, self::envName($key));
             }
         }
 
@@ -136,6 +136,24 @@ class Settings extends Model
         $settings->resetInvalidToDefaults();
 
         return $settings;
+    }
+
+    /**
+     * Coerces and assigns one option. A value that cannot be coerced to the
+     * property's type (e.g. `'enabled'` for a bool) is logged and skipped so
+     * the default survives, rather than collapsing to false/0.
+     */
+    private function assign(string $key, mixed $raw, string $source): void
+    {
+        $value = self::coerce($key, $raw);
+        $type = (new ReflectionProperty(self::class, $key))->getType();
+
+        if ($value === null && $type instanceof ReflectionNamedType && !$type->allowsNull()) {
+            Craft::warning("Ledge setting '{$key}' from {$source} is not a valid {$type->getName()}; using the default.", __METHOD__);
+            return;
+        }
+
+        $this->$key = $value;
     }
 
     /**
@@ -331,7 +349,8 @@ class Settings extends Model
      * Normalizes a raw config or env value to the property's declared type.
      * Strings are passed through `App::parseEnv`, so `'$LEDGE_FOO'` works in
      * the config file. For nullable ints, an empty string or one of
-     * `null|none|off|false` clears the value (disables that tier).
+     * `null|none|off|false` clears the value (disables that tier). Returns
+     * null for a bool that cannot be parsed; assign() decides what that means.
      */
     private static function coerce(string $key, mixed $value): mixed
     {
@@ -347,7 +366,7 @@ class Settings extends Model
         $nullable = $type->allowsNull();
 
         return match ($type->getName()) {
-            'bool' => is_bool($value) ? $value : (App::parseBooleanEnv($value) ?? ($nullable ? null : false)),
+            'bool' => is_bool($value) ? $value : App::parseBooleanEnv($value),
             'int' => self::coerceInt($value, $nullable),
             'string' => $value === null ? ($nullable ? null : '') : (is_scalar($value) ? (string)$value : ''),
             'array' => is_array($value) ? $value : (is_string($value) ? self::splitList($value) : []),

@@ -39,16 +39,20 @@ src/
 │   ├── DiskSpaceCheck.php     # Disk usage monitoring
 │   ├── EnvironmentCheck.php   # Missing env vars check
 │   ├── FailedLoginsCheck.php  # Failed login attempts
-│   ├── FormCheck.php          # Formie/Freeform monitoring
+│   ├── FormieCheck.php        # Formie failed notifications
+│   ├── FreeformCheck.php      # Freeform error log
 │   ├── LicenseCheck.php       # License status check
 │   ├── MemoryCheck.php        # PHP memory monitoring
 │   ├── PluginVersionsCheck.php # Plugin updates check
-│   └── QueueCheck.php         # Queue monitoring check
+│   ├── QueueCheck.php         # Queue monitoring check
+│   └── Thresholds.php         # Shared degraded/unhealthy tier evaluation
+├── config.php             # Annotated example config (copy to config/ledge.php)
 ├── console/
 │   └── controllers/
-│       └── DefaultController.php # Console commands
+│       └── DefaultController.php # generate-key, publish-config
 ├── controllers/
 │   ├── AcquireController.php      # Signed acquire commands (opt-in)
+│   ├── AuthenticatesWithSecretKey.php # Shared key-auth trait
 │   ├── DependenciesController.php # Composer package inventory
 │   ├── HealthController.php       # /health endpoint
 │   └── UrisController.php         # Public URL map (opt-in)
@@ -143,7 +147,7 @@ Event::on(
 - `declare(strict_types=1);` in all files
 - Follow Craft's ECS configuration (no space before closure parentheses)
 - Use constructor property promotion where appropriate
-- Import order: project namespace first, then Craft, then vendor, then PHP
+- Import order: alphabetical, case-insensitive, as enforced by ECS; do not hand-group by namespace
 
 ## Environment Variables
 
