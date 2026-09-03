@@ -40,6 +40,17 @@ class Ledge extends Plugin
         ];
     }
 
+    /**
+     * Effective settings, or the defaults when the plugin is not loaded (unit
+     * tests exercise checks without a Craft application or plugin instance).
+     */
+    public static function currentSettings(): Settings
+    {
+        $instance = static::getInstance();
+
+        return $instance !== null ? $instance->getSettings() : new Settings();
+    }
+
     public function init(): void
     {
         parent::init();
@@ -52,21 +63,16 @@ class Ledge extends Plugin
 
     protected function createSettingsModel(): ?Model
     {
-        $settings = new Settings();
         $fileConfig = Craft::$app->getConfig()->getConfigFromFile('ledge');
 
-        if (is_array($fileConfig)) {
-            $settings->setAttributes($fileConfig, false);
-        }
-
-        return $settings;
+        return Settings::fromConfig(is_array($fileConfig) ? $fileConfig : []);
     }
 
     private function registerRoutes(): void
     {
         $settings = $this->getSettings();
         $endpointPath = $settings->endpointPath;
-        $dependenciesPath = $settings->dependenciesPath;
+        $dependenciesPath = $settings->isDependenciesEnabled() ? $settings->dependenciesPath : null;
         $urisPath = $settings->isUrisEnabled() ? $settings->urisPath : null;
         $acquirePath = $settings->isAcquireEnabled() ? $settings->acquirePath : null;
 
@@ -75,7 +81,9 @@ class Ledge extends Plugin
             UrlManager::EVENT_REGISTER_SITE_URL_RULES,
             function(RegisterUrlRulesEvent $event) use ($endpointPath, $dependenciesPath, $urisPath, $acquirePath) {
                 $event->rules[$endpointPath] = 'ledge/health/index';
-                $event->rules["GET {$dependenciesPath}"] = 'ledge/dependencies/index';
+                if ($dependenciesPath !== null) {
+                    $event->rules["GET {$dependenciesPath}"] = 'ledge/dependencies/index';
+                }
 
                 if ($urisPath !== null) {
                     $event->rules["GET {$urisPath}"] = 'ledge/uris/index';

@@ -6,6 +6,7 @@ namespace ledgehq\craftledge\checks;
 
 use Craft;
 use craft\helpers\App;
+use ledgehq\craftledge\Ledge;
 use Throwable;
 
 class CraftVersionCheck implements CheckInterface
@@ -56,6 +57,10 @@ class CraftVersionCheck implements CheckInterface
             ]);
         }
 
+        $settings = Ledge::currentSettings();
+        $updateAvailableStatus = $settings->updateAvailableStatus;
+        $criticalUpdateStatus = $settings->criticalUpdateStatus;
+
         $meta = [
             'current' => $currentVersion,
             'edition' => $edition,
@@ -64,18 +69,18 @@ class CraftVersionCheck implements CheckInterface
             'isCritical' => $isCritical,
             'notes' => $notes,
             'updateStatus' => $updateStatus,
+            'thresholds' => [
+                'updateAvailableStatus' => $updateAvailableStatus,
+                'criticalUpdateStatus' => $criticalUpdateStatus,
+            ],
         ];
 
         if ($isCritical) {
-            return CheckResult::unhealthy(
-                $this->getName(),
-                $meta,
-                "Critical update available: {$latestVersion}"
-            );
+            return new CheckResult($this->getName(), $criticalUpdateStatus, $meta, "Critical update available: {$latestVersion}");
         }
 
         if ($hasUpdate) {
-            return CheckResult::healthy($this->getName(), $meta, "Update available: {$latestVersion}");
+            return new CheckResult($this->getName(), $updateAvailableStatus, $meta, "Update available: {$latestVersion}");
         }
 
         return CheckResult::healthy($this->getName(), $meta);

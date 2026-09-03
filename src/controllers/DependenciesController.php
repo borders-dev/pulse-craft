@@ -11,6 +11,8 @@ use yii\web\Response;
 
 class DependenciesController extends Controller
 {
+    use AuthenticatesWithSecretKey;
+
     protected array|bool|int $allowAnonymous = ['index'];
 
     public function beforeAction($action): bool
@@ -23,11 +25,7 @@ class DependenciesController extends Controller
 
         $error = $this->validateSecretKey();
         if ($error !== null) {
-            $response = Craft::$app->getResponse();
-            $response->setStatusCode(401);
-            $response->format = Response::FORMAT_JSON;
-            $response->data = ['error' => $error];
-            return false;
+            return $this->rejectWithSecretKeyError($error);
         }
 
         return true;
@@ -43,25 +41,5 @@ class DependenciesController extends Controller
             'generatedAt' => date('c'),
             'hash' => $dependencies->getHash($packages),
         ]);
-    }
-
-    private function validateSecretKey(): ?string
-    {
-        $settings = Ledge::getInstance()->getSettings();
-        $configuredKey = $settings->getSecretKey();
-
-        if (empty($configuredKey)) {
-            return 'LEDGE_SECRET_KEY is not configured';
-        }
-
-        $request = Craft::$app->getRequest();
-        $providedKey = $request->getHeaders()->get('X-Ledge-Key')
-            ?? $request->getQueryParam('key');
-
-        if (empty($providedKey) || !hash_equals($configuredKey, $providedKey)) {
-            return 'Unauthorized';
-        }
-
-        return null;
     }
 }

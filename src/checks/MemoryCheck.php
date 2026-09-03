@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ledgehq\craftledge\checks;
 
 use Craft;
+use ledgehq\craftledge\Ledge;
 use Throwable;
 
 class MemoryCheck implements CheckInterface
@@ -30,23 +31,23 @@ class MemoryCheck implements CheckInterface
                 ]);
             }
 
+            $settings = Ledge::currentSettings();
+            $degradedAt = $settings->memoryDegradedAt;
+            $unhealthyAt = $settings->memoryUnhealthyAt;
+
             $usedPercent = (int) round(($memoryUsage / $memoryLimit) * 100);
             $meta = [
                 'usageBytes' => $memoryUsage,
                 'peakBytes' => $peakUsage,
                 'limitBytes' => $memoryLimit,
                 'usedPercent' => $usedPercent,
+                'thresholds' => Thresholds::describe($degradedAt, $unhealthyAt),
             ];
 
-            if ($usedPercent >= 90) {
-                return CheckResult::unhealthy($this->getName(), $meta, "Memory usage at {$usedPercent}%");
-            }
+            $status = Thresholds::status($usedPercent, $degradedAt, $unhealthyAt);
+            $output = $status === CheckResult::STATUS_HEALTHY ? null : "Memory usage at {$usedPercent}%";
 
-            if ($usedPercent >= 75) {
-                return CheckResult::degraded($this->getName(), $meta, "Memory usage at {$usedPercent}%");
-            }
-
-            return CheckResult::healthy($this->getName(), $meta);
+            return new CheckResult($this->getName(), $status, $meta, $output);
         } catch (Throwable $e) {
             Craft::error('Ledge memory check failed: ' . $e->getMessage(), __METHOD__);
             return CheckResult::degraded($this->getName(), [], 'Check unavailable');

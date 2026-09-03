@@ -6,6 +6,7 @@ namespace ledgehq\craftledge\checks;
 
 use Craft;
 use craft\db\Query;
+use ledgehq\craftledge\Ledge;
 use Throwable;
 
 class FormieCheck implements CheckInterface
@@ -29,30 +30,21 @@ class FormieCheck implements CheckInterface
                 ->andWhere(['e.dateDeleted' => null])
                 ->count();
 
-            $meta = [
-                'installed' => true,
-                'failedNotifications' => (int) $failedNotifications,
-            ];
-
+            $settings = Ledge::currentSettings();
+            $degradedAt = $settings->formieDegradedAt;
+            $unhealthyAt = $settings->formieUnhealthyAt;
             $count = (int) $failedNotifications;
 
-            if ($count > 10) {
-                return CheckResult::unhealthy(
-                    $this->getName(),
-                    $meta,
-                    "{$count} failed notification(s) detected"
-                );
-            }
+            $meta = [
+                'installed' => true,
+                'failedNotifications' => $count,
+                'thresholds' => Thresholds::describe($degradedAt, $unhealthyAt),
+            ];
 
-            if ($count > 0) {
-                return CheckResult::degraded(
-                    $this->getName(),
-                    $meta,
-                    "{$count} failed notification(s) detected"
-                );
-            }
+            $status = Thresholds::status($count, $degradedAt, $unhealthyAt);
+            $output = $status === CheckResult::STATUS_HEALTHY ? null : "{$count} failed notification(s) detected";
 
-            return CheckResult::healthy($this->getName(), $meta);
+            return new CheckResult($this->getName(), $status, $meta, $output);
         } catch (Throwable) {
             return CheckResult::degraded($this->getName(), [
                 'installed' => true,

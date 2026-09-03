@@ -46,10 +46,15 @@ src/
 │   └── controllers/
 │       └── DefaultController.php # Console commands
 ├── controllers/
-│   └── HealthController.php # /health endpoint
+│   ├── AcquireController.php      # Signed acquire commands (opt-in)
+│   ├── DependenciesController.php # Composer package inventory
+│   ├── HealthController.php       # /health endpoint
+│   └── UrisController.php         # Public URL map (opt-in)
 ├── models/
-│   └── Settings.php       # Plugin settings
+│   └── Settings.php       # Plugin settings (Settings::fromConfig resolves config > env > default)
 └── services/
+    ├── AcquireService.php
+    ├── DependenciesService.php # Shared package inventory + hash
     └── HealthService.php  # Orchestrates all checks
 ```
 
@@ -58,7 +63,7 @@ src/
 ### Plugin Class Pattern
 - Extends `craft\base\Plugin`
 - Use `Craft::$app->onInit()` for deferred initialization
-- Settings via `createSettingsModel()` (config-file only; no CP UI)
+- Settings via `createSettingsModel()` (config-file only; no CP UI). Build with `Settings::fromConfig($fileConfig)` so env fallbacks and validation apply; never `new Settings()` + `setAttributes()`
 - Register components in `config()` static method
 
 ### Registering Routes
@@ -118,7 +123,15 @@ Event::on(
 
 ### Phase 4 (Future)
 - [ ] Email delivery verification
-- [ ] Configurable status level for non-critical updates (healthy vs degraded)
+- [x] Configurable status level for non-critical updates (`updateAvailableStatus`)
+
+## Settings Conventions
+
+- Every option has a `LEDGE_*` env fallback derived from its name (`Settings::envName()`); `ledgeBaseUrl` is deliberately excluded
+- Numeric thresholds are `<check>DegradedAt` / `<check>UnhealthyAt` nullable ints; null disables that tier. Evaluate with `Thresholds::status()`
+- Condition checks take a `<condition>Status` string (`healthy|degraded|unhealthy`)
+- Each check puts the effective values it used under `meta['thresholds']`
+- New options must be added to `src/config.php` with a comment and default
 
 ## Code Style
 
@@ -132,6 +145,7 @@ Event::on(
 ## Environment Variables
 
 - `LEDGE_SECRET_KEY` - Health endpoint authentication key
+- `LEDGE_*` - every config option, see `src/config.php`; `LEDGE_DISABLED_CHECKS` is a comma list
 
 ## Testing the Plugin
 
