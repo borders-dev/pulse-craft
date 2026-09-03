@@ -13,6 +13,7 @@ use craft\web\UrlManager;
 use ledgehq\craftledge\console\controllers\DefaultController;
 use ledgehq\craftledge\models\Settings;
 use ledgehq\craftledge\services\AcquireService;
+use ledgehq\craftledge\services\DependenciesService;
 use ledgehq\craftledge\services\HealthService;
 use yii\base\Event;
 
@@ -21,6 +22,7 @@ use yii\base\Event;
  * @method Settings getSettings()
  * @property-read HealthService $health
  * @property-read AcquireService $acquire
+ * @property-read DependenciesService $dependencies
  */
 class Ledge extends Plugin
 {
@@ -33,8 +35,20 @@ class Ledge extends Plugin
             'components' => [
                 'health' => HealthService::class,
                 'acquire' => AcquireService::class,
+                'dependencies' => DependenciesService::class,
             ],
         ];
+    }
+
+    /**
+     * Effective settings, or the defaults when the plugin is not loaded (unit
+     * tests exercise checks without a Craft application or plugin instance).
+     */
+    public static function currentSettings(): Settings
+    {
+        $instance = static::getInstance();
+
+        return $instance !== null ? $instance->getSettings() : new Settings();
     }
 
     public function init(): void
@@ -49,28 +63,27 @@ class Ledge extends Plugin
 
     protected function createSettingsModel(): ?Model
     {
-        $settings = new Settings();
         $fileConfig = Craft::$app->getConfig()->getConfigFromFile('ledge');
 
-        if (is_array($fileConfig)) {
-            $settings->setAttributes($fileConfig, false);
-        }
-
-        return $settings;
+        return Settings::fromConfig(is_array($fileConfig) ? $fileConfig : []);
     }
 
     private function registerRoutes(): void
     {
         $settings = $this->getSettings();
         $endpointPath = $settings->endpointPath;
+        $dependenciesPath = $settings->isDependenciesEnabled() ? $settings->dependenciesPath : null;
         $urisPath = $settings->isUrisEnabled() ? $settings->urisPath : null;
         $acquirePath = $settings->isAcquireEnabled() ? $settings->acquirePath : null;
 
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_SITE_URL_RULES,
-            function(RegisterUrlRulesEvent $event) use ($endpointPath, $urisPath, $acquirePath) {
+            function(RegisterUrlRulesEvent $event) use ($endpointPath, $dependenciesPath, $urisPath, $acquirePath) {
                 $event->rules[$endpointPath] = 'ledge/health/index';
+                if ($dependenciesPath !== null) {
+                    $event->rules["GET {$dependenciesPath}"] = 'ledge/dependencies/index';
+                }
 
                 if ($urisPath !== null) {
                     $event->rules["GET {$urisPath}"] = 'ledge/uris/index';

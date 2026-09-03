@@ -47,6 +47,45 @@ The health endpoint can then be accessed by including the key in the `X-Ledge-Ke
 curl -H "X-Ledge-Key: your-secret-key" https://your-site.com/_ledge/health
 ```
 
+The header is the only accepted method by default, which keeps the key out of URLs and access logs. The header name is configurable with `keyHeader` (or `LEDGE_KEY_HEADER`). If a client cannot send headers, set `allowQueryKey` to `true` (or `LEDGE_ALLOW_QUERY_KEY=true`) to also accept a `?key=` query parameter; the parameter name is configurable with `queryKeyParam`.
+
+### Options
+
+Every threshold, status level, endpoint path, and toggle is configurable. The annotated list of options with their defaults lives in [src/config.php](src/config.php). To customise, copy it to `config/ledge.php` in your project, or run:
+
+```bash
+./craft ledge/publish-config
+```
+
+Each option resolves in the same order: an explicit key in `config/ledge.php` wins, then the matching `LEDGE_*` env var, then the default. The env var name is the option name in SCREAMING_SNAKE_CASE, so `diskUnhealthyAt` reads `LEDGE_DISK_UNHEALTHY_AT`. Config values may also be `$VAR` references. `ledgeBaseUrl` is the one exception and is never read from the environment.
+
+Thresholds come in `DegradedAt` / `UnhealthyAt` pairs. A check trips a tier when its measured value is greater than or equal to that tier. Set a tier to `null` (or its env var to empty or `off`) to disable it. Checks that report a condition rather than a number (`devMode`, missing env vars, license issues, available updates) take a status level instead: `healthy`, `degraded`, or `unhealthy`.
+
+```php
+// config/ledge.php
+return [
+    'diskDegradedAt' => 85,
+    'diskUnhealthyAt' => 95,
+    'diskMinFreeBytes' => 10 * 1024 ** 3,
+    'updateAvailableStatus' => 'degraded',
+    'enabledChecks' => ['freeform' => false],
+];
+```
+
+```bash
+# or, in .env
+LEDGE_DISK_UNHEALTHY_AT=95
+LEDGE_DISABLED_CHECKS=freeform
+```
+
+Every check echoes the values it actually used under a `thresholds` key in its result, so Ledge can show why a site tripped rather than assuming the defaults.
+
+## Dependencies
+
+The shared key also unlocks `GET /_ledge/dependencies`, which returns the installed Composer package set (`{composer: [{name, version}], generatedAt, hash}`) so the Ledge service can match your site against published security advisories. It reads Composer's runtime data rather than `composer.lock`, so it reflects what is actually deployed and omits dev packages on `--no-dev` installs. It is on by default; it exposes the same class of information the health payload's plugin check already does.
+
+The health payload includes the same `hash` as `dependenciesHash`, so the service only fetches the full package list when it changes. It also carries `composerLockHash`, the SHA-256 of the raw bytes of the project's `composer.lock` (`null` when the file is absent or unreadable), so the service can tell whether what is deployed matches the lockfile committed to the linked repository. The path is configurable with `dependenciesPath` (default `_ledge/dependencies`), and the endpoint can be turned off with `dependenciesEnabled` / `LEDGE_DEPENDENCIES_ENABLED=false`, in which case the route is a 404 and both hashes are omitted from the health payload.
+
 ## Acquire (automated update testing & backups)
 
 Beyond `/health`, Ledge can act as an **acquisition agent**: on a signed command from the Ledge service, the plugin produces an encrypted bundle of the site (a database dump — plus an environment + crawlable-URL manifest for update-test runs) and uploads it to object storage. This powers automated "does this update break the site?" testing and scheduled database backups.

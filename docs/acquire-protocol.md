@@ -65,7 +65,7 @@ The public key is published in the keyset under a `key_id`; the secret key stays
 
 ## Command contract
 
-`POST /_ledge/acquire` with header `X-Ledge-Key: <shared key>` and body:
+`POST /_ledge/acquire` with header `X-Ledge-Key: <shared key>` (header name configurable via the plugin's `keyHeader` setting; `X-Ledge-Key` is the default and is used throughout this document) and body:
 
 ```json
 {

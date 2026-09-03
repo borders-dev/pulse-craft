@@ -33,8 +33,8 @@ class QueueCheck implements CheckInterface
 
             $pending = count($queue->getJobInfo());
             $failed = $queue->getTotalFailed();
-            $settings = Ledge::getInstance()->getSettings();
-            $ageThreshold = $settings->queueAgeThreshold;
+            $settings = Ledge::currentSettings();
+            $ageThreshold = $settings->queueStaleAfter;
             $now = DateTimeHelper::currentTimeStamp();
             $cutoff = $now - $ageThreshold;
 
@@ -53,18 +53,26 @@ class QueueCheck implements CheckInterface
                 'pending' => $pending,
                 'failed' => $failed,
                 'stale' => $stale,
+                'thresholds' => [
+                    'failed' => Thresholds::describe($settings->queueFailedDegradedAt, $settings->queueFailedUnhealthyAt),
+                    'stale' => Thresholds::describe($settings->queueStaleDegradedAt, $settings->queueStaleUnhealthyAt) + ['ageSeconds' => $ageThreshold],
+                ],
             ];
 
-            if ($failed > 0) {
-                return CheckResult::unhealthy($this->getName(), $meta, "$failed failed job(s)");
-            }
+            $failedStatus = Thresholds::status($failed, $settings->queueFailedDegradedAt, $settings->queueFailedUnhealthyAt);
+            $staleStatus = Thresholds::status($stale, $settings->queueStaleDegradedAt, $settings->queueStaleUnhealthyAt);
+            $status = Thresholds::worst($failedStatus, $staleStatus);
 
-            if ($stale > 0) {
+            $messages = [];
+            if ($failedStatus !== CheckResult::STATUS_HEALTHY) {
+                $messages[] = "$failed failed job(s)";
+            }
+            if ($staleStatus !== CheckResult::STATUS_HEALTHY) {
                 $minutes = (int)($ageThreshold / 60);
-                return CheckResult::unhealthy($this->getName(), $meta, "$stale job(s) waiting longer than $minutes minutes");
+                $messages[] = "$stale job(s) waiting longer than $minutes minutes";
             }
 
-            return CheckResult::healthy($this->getName(), $meta);
+            return new CheckResult($this->getName(), $status, $meta, $messages ? implode('; ', $messages) : null);
         } catch (Throwable $e) {
             Craft::error('Ledge queue check failed: ' . $e->getMessage(), __METHOD__);
             return CheckResult::unhealthy(

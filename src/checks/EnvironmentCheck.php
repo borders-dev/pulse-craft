@@ -59,8 +59,9 @@ class EnvironmentCheck implements CheckInterface
                 }
             }
 
-            $instance = Ledge::getInstance();
-            $ignored = $instance !== null ? $instance->getSettings()->ignoredEnvVars : [];
+            $settings = Ledge::currentSettings();
+            $ignored = $settings->ignoredEnvVars;
+            $missingStatus = $settings->missingEnvVarsStatus;
             $missing = array_values(array_diff(array_keys($missingVars), array_keys($definedVars), $ignored));
             $defined = array_keys($definedVars);
 
@@ -70,11 +71,13 @@ class EnvironmentCheck implements CheckInterface
                 'php' => PHP_VERSION,
                 'os' => php_uname('s') . ' ' . php_uname('r'),
                 'database' => $this->getDatabaseVersion(),
+                'thresholds' => ['missingEnvVarsStatus' => $missingStatus],
             ];
 
-            if (!empty($missing)) {
-                return CheckResult::degraded(
+            if (!empty($missing) && $missingStatus !== CheckResult::STATUS_HEALTHY) {
+                return new CheckResult(
                     $this->getName(),
+                    $missingStatus,
                     $meta,
                     count($missing) . ' environment variable(s) referenced but not defined'
                 );

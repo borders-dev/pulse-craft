@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ledgehq\craftledge\checks;
 
 use Craft;
+use ledgehq\craftledge\Ledge;
 use Throwable;
 
 class PluginVersionsCheck implements CheckInterface
@@ -85,18 +86,28 @@ class PluginVersionsCheck implements CheckInterface
             ];
         }
 
+        $settings = Ledge::currentSettings();
+        $updateAvailableStatus = $settings->updateAvailableStatus;
+        $criticalUpdateStatus = $settings->criticalUpdateStatus;
+
         $meta = [
             'installed' => $pluginData,
             'outdated' => $outdated,
+            'thresholds' => [
+                'updateAvailableStatus' => $updateAvailableStatus,
+                'criticalUpdateStatus' => $criticalUpdateStatus,
+            ],
         ];
 
         if ($hasCritical) {
             $criticalCount = count(array_filter($outdated, fn($p) => $p['isCritical']));
-            return CheckResult::unhealthy(
-                $this->getName(),
-                $meta,
-                "{$criticalCount} plugin(s) have critical updates"
-            );
+            return new CheckResult($this->getName(), $criticalUpdateStatus, $meta, "{$criticalCount} plugin(s) have critical updates");
+        }
+
+        if ($outdated !== []) {
+            $count = count($outdated);
+            $output = $updateAvailableStatus === CheckResult::STATUS_HEALTHY ? null : "{$count} plugin update(s) available";
+            return new CheckResult($this->getName(), $updateAvailableStatus, $meta, $output);
         }
 
         return CheckResult::healthy($this->getName(), $meta);

@@ -81,15 +81,24 @@ class HealthService extends Component
             $overallStatus = $this->determineOverallStatus($overallStatus, $result->status);
         }
 
-        return [
+        $payload = [
             'status' => $overallStatus,
             'platform' => $this->getPlatform(),
             'configVersion' => $this->getConfigVersion(),
             'cpUrl' => $this->getCpUrl(),
             'acquireEnabled' => $settings->isAcquireEnabled(),
             'backupProfileSupported' => true,
-            'checks' => $results,
         ];
+
+        if ($settings->isDependenciesEnabled()) {
+            $dependencies = Ledge::getInstance()->dependencies;
+            $payload['dependenciesHash'] = $dependencies->getCurrentHash();
+            $payload['composerLockHash'] = $dependencies->getComposerLockHash();
+        }
+
+        $payload['checks'] = $results;
+
+        return $payload;
     }
 
     public function getCpUrl(): ?string

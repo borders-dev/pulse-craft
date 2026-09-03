@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ledgehq\craftledge\checks;
 
 use Craft;
+use ledgehq\craftledge\Ledge;
 use Solspace\Freeform\Freeform;
 use Throwable;
 
@@ -34,6 +35,9 @@ class FreeformCheck implements CheckInterface
             $logger = $freeform->logger;
 
             $errorCount = $logger->getCombinedLogLineCount(['error']);
+            $settings = Ledge::currentSettings();
+            $degradedAt = $settings->freeformDegradedAt;
+            $unhealthyAt = $settings->freeformUnhealthyAt;
 
             $meta = [
                 'installed' => true,
@@ -41,6 +45,7 @@ class FreeformCheck implements CheckInterface
                 'integrationsLogCount' => $logger->getLogReader('freeform-integrations.log')->count(),
                 'emailLogCount' => $logger->getLogReader('freeform-email.log')->count(),
                 'errors' => $errorCount,
+                'thresholds' => Thresholds::describe($degradedAt, $unhealthyAt),
             ];
         } catch (Throwable) {
             return CheckResult::degraded($this->getName(), [
@@ -49,22 +54,9 @@ class FreeformCheck implements CheckInterface
             ], 'Unable to read Freeform logs');
         }
 
-        if ($errorCount > 10) {
-            return CheckResult::unhealthy(
-                $this->getName(),
-                $meta,
-                "{$errorCount} Freeform error(s) logged"
-            );
-        }
+        $status = Thresholds::status($errorCount, $degradedAt, $unhealthyAt);
+        $output = $status === CheckResult::STATUS_HEALTHY ? null : "{$errorCount} Freeform error(s) logged";
 
-        if ($errorCount > 0) {
-            return CheckResult::degraded(
-                $this->getName(),
-                $meta,
-                "{$errorCount} Freeform error(s) logged"
-            );
-        }
-
-        return CheckResult::healthy($this->getName(), $meta);
+        return new CheckResult($this->getName(), $status, $meta, $output);
     }
 }

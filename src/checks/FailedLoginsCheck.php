@@ -20,8 +20,10 @@ class FailedLoginsCheck implements CheckInterface
     public function run(): ?CheckResult
     {
         try {
-            $settings = Ledge::getInstance()->getSettings();
-            $windowSeconds = $settings->failedLoginWindow;
+            $settings = Ledge::currentSettings();
+            $windowSeconds = $settings->failedLoginsWindow;
+            $degradedAt = $settings->failedLoginsDegradedAt;
+            $unhealthyAt = $settings->failedLoginsUnhealthyAt;
 
             $since = (new DateTime())->modify("-{$windowSeconds} seconds");
 
@@ -35,17 +37,13 @@ class FailedLoginsCheck implements CheckInterface
             $meta = [
                 'count' => $count,
                 'window' => "{$windowHours}h",
+                'thresholds' => Thresholds::describe($degradedAt, $unhealthyAt) + ['windowSeconds' => $windowSeconds],
             ];
 
-            if ($count >= 50) {
-                return CheckResult::unhealthy($this->getName(), $meta, "{$count} failed login attempts in the last {$windowHours} hours");
-            }
+            $status = Thresholds::status($count, $degradedAt, $unhealthyAt);
+            $output = $status === CheckResult::STATUS_HEALTHY ? null : "{$count} failed login attempts in the last {$windowHours} hours";
 
-            if ($count >= 10) {
-                return CheckResult::degraded($this->getName(), $meta, "{$count} failed login attempts in the last {$windowHours} hours");
-            }
-
-            return CheckResult::healthy($this->getName(), $meta);
+            return new CheckResult($this->getName(), $status, $meta, $output);
         } catch (Throwable $e) {
             Craft::error('Ledge failedLogins check failed: ' . $e->getMessage(), __METHOD__);
             return CheckResult::degraded($this->getName(), [], 'Check unavailable');

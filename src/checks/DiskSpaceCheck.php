@@ -33,24 +33,29 @@ class DiskSpaceCheck implements CheckInterface
             $usedSpace = $totalSpace - $freeSpace;
             $usedPercent = (int) round(($usedSpace / $totalSpace) * 100);
 
-            $settings = Ledge::getInstance()->getSettings();
-            $threshold = $settings->diskSpaceThreshold;
+            $settings = Ledge::currentSettings();
+            $degradedAt = $settings->diskDegradedAt;
+            $unhealthyAt = $settings->diskUnhealthyAt;
+            $minFreeBytes = $settings->diskMinFreeBytes;
 
             $meta = [
                 'usedPercent' => $usedPercent,
                 'freeBytes' => $freeSpace,
                 'totalBytes' => $totalSpace,
+                'thresholds' => Thresholds::describe($degradedAt, $unhealthyAt) + ['minFreeBytes' => $minFreeBytes],
             ];
 
-            if ($usedPercent >= $threshold) {
-                return CheckResult::unhealthy($this->getName(), $meta, "Disk usage at {$usedPercent}% (threshold: {$threshold}%)");
+            if ($minFreeBytes !== null && $freeSpace < $minFreeBytes) {
+                return CheckResult::unhealthy($this->getName(), $meta, "Only {$freeSpace} bytes free (minimum: {$minFreeBytes})");
             }
 
-            if ($threshold > 10 && $usedPercent >= $threshold - 10) {
-                return CheckResult::degraded($this->getName(), $meta, "Disk usage approaching threshold at {$usedPercent}%");
-            }
+            $status = Thresholds::status($usedPercent, $degradedAt, $unhealthyAt);
 
-            return CheckResult::healthy($this->getName(), $meta);
+            return match ($status) {
+                CheckResult::STATUS_UNHEALTHY => CheckResult::unhealthy($this->getName(), $meta, "Disk usage at {$usedPercent}% (threshold: {$unhealthyAt}%)"),
+                CheckResult::STATUS_DEGRADED => CheckResult::degraded($this->getName(), $meta, "Disk usage approaching threshold at {$usedPercent}%"),
+                default => CheckResult::healthy($this->getName(), $meta),
+            };
         } catch (Throwable $e) {
             Craft::error('Ledge disk check failed: ' . $e->getMessage(), __METHOD__);
             return CheckResult::degraded($this->getName(), [], 'Check unavailable');

@@ -11,12 +11,21 @@ use yii\console\ExitCode;
 
 class DefaultController extends Controller
 {
-    private const OPTIONAL_ENV_VARS = [
-        'LEDGE_ACQUIRE_ENABLED' => 'false',
-        'LEDGE_ACQUIRE_ALLOWED_HOSTS' => 'ledgehq.app,*.ledgehq.app',
-        'LEDGE_ACQUIRE_ENV_DENYLIST' => 'DB_*,CRAFT_DB_*,*_PASSWORD*,*_SECRET*,*_TOKEN*,*_API_KEY*',
-        'LEDGE_URIS_ENABLED' => 'false',
-    ];
+    /**
+     * Overwrite an existing config/ledge.php when publishing.
+     */
+    public bool $force = false;
+
+    public function options($actionID): array
+    {
+        $options = parent::options($actionID);
+
+        if ($actionID === 'publish-config') {
+            $options[] = 'force';
+        }
+
+        return $options;
+    }
 
     public function actionGenerateKey(): int
     {
@@ -38,40 +47,35 @@ class DefaultController extends Controller
         $this->stdout("done\n", Console::FG_GREEN);
         $this->stdout("LEDGE_SECRET_KEY={$key}\n");
 
-        $this->appendOptionalEnvVars($path);
-
         return ExitCode::OK;
     }
 
-    private function appendOptionalEnvVars(string $path): void
+    /**
+     * Copies the annotated example config to config/ledge.php.
+     */
+    public function actionPublishConfig(): int
     {
-        try {
-            $contents = is_file($path) ? file_get_contents($path) : false;
-            if ($contents === false) {
-                return;
-            }
+        $source = dirname(__DIR__, 2) . '/config.php';
+        $target = Craft::$app->getPath()->getConfigPath() . '/ledge.php';
 
-            $lines = [];
-            foreach (self::OPTIONAL_ENV_VARS as $name => $value) {
-                if (!str_contains($contents, $name)) {
-                    $lines[] = "# {$name}={$value}";
-                }
-            }
-
-            if ($lines === []) {
-                return;
-            }
-
-            $block = "\n# Ledge (optional; uncomment to override the defaults)\n" . implode("\n", $lines) . "\n";
-            if (!str_ends_with($contents, "\n")) {
-                $block = "\n" . $block;
-            }
-
-            file_put_contents($path, $block, FILE_APPEND | LOCK_EX);
-            $this->stdout('Added commented-out Ledge env options to ', Console::FG_YELLOW);
-            $this->stdout("{$path}\n");
-        } catch (\Throwable $e) {
-            $this->stderr("Unable to append optional Ledge env vars to {$path}: {$e->getMessage()}\n", Console::FG_RED);
+        if (!is_file($source)) {
+            $this->stderr("Example config not found at {$source}\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
         }
+
+        if (is_file($target) && !$this->force) {
+            $this->stderr("{$target} already exists. Re-run with --force to overwrite it.\n", Console::FG_YELLOW);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
+        if (!@copy($source, $target)) {
+            $this->stderr("Unable to write {$target}\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
+        $this->stdout('Published Ledge config to ', Console::FG_GREEN);
+        $this->stdout("{$target}\n");
+
+        return ExitCode::OK;
     }
 }

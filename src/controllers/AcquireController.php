@@ -31,7 +31,7 @@ class AcquireController extends Controller
         }
 
         $configuredKey = $settings->getSecretKey();
-        $providedKey = Craft::$app->getRequest()->getHeaders()->get('X-Ledge-Key');
+        $providedKey = Craft::$app->getRequest()->getHeaders()->get($settings->keyHeader);
 
         if (empty($configuredKey) || empty($providedKey) || !hash_equals($configuredKey, $providedKey)) {
             return $this->rejectBeforeAction('invalid_key', 401);

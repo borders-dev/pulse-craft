@@ -6,6 +6,7 @@ namespace ledgehq\craftledge\checks;
 
 use Craft;
 use craft\helpers\App;
+use ledgehq\craftledge\Ledge;
 use Throwable;
 
 class LicenseCheck implements CheckInterface
@@ -61,16 +62,20 @@ class LicenseCheck implements CheckInterface
                 'currentEdition' => $currentEdition,
             ];
 
+            $issueStatus = Ledge::currentSettings()->licenseIssueStatus;
+
             $meta = [
                 'craft' => $craftData,
                 'plugins' => $pluginLicenses,
+                'thresholds' => ['licenseIssueStatus' => $issueStatus],
             ];
 
             $editionMismatch = $licensedEdition !== null && $licensedEdition !== $currentEdition;
 
             $invalidStatuses = ['invalid', 'mismatched', 'astray'];
-            if (in_array($licenseKeyStatus, $invalidStatuses, true) || $editionMismatch || $hasInvalidPluginLicense) {
-                return CheckResult::unhealthy($this->getName(), $meta, 'License issue detected');
+            $hasIssue = in_array($licenseKeyStatus, $invalidStatuses, true) || $editionMismatch || $hasInvalidPluginLicense;
+            if ($hasIssue && $issueStatus !== CheckResult::STATUS_HEALTHY) {
+                return new CheckResult($this->getName(), $issueStatus, $meta, 'License issue detected');
             }
 
             return CheckResult::healthy($this->getName(), $meta);
