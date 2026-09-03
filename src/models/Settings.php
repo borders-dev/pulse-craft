@@ -203,8 +203,9 @@ class Settings extends Model
 
     /**
      * The dependencies endpoint is on by default. When disabled the route is
-     * not registered (404) and the health payload reports
-     * `dependenciesSupported: false` with no `dependenciesHash`.
+     * not registered (404) and the health payload omits `dependenciesHash`
+     * and `composerLockHash`; their absence is how Ledge detects the feature
+     * is off.
      */
     public function isDependenciesEnabled(): bool
     {

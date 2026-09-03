@@ -88,11 +88,12 @@ class HealthService extends Component
             'cpUrl' => $this->getCpUrl(),
             'acquireEnabled' => $settings->isAcquireEnabled(),
             'backupProfileSupported' => true,
-            'dependenciesSupported' => $settings->isDependenciesEnabled(),
         ];
 
         if ($settings->isDependenciesEnabled()) {
-            $payload['dependenciesHash'] = Ledge::getInstance()->dependencies->getCurrentHash();
+            $dependencies = Ledge::getInstance()->dependencies;
+            $payload['dependenciesHash'] = $dependencies->getCurrentHash();
+            $payload['composerLockHash'] = $dependencies->getComposerLockHash();
         }
 
         $payload['checks'] = $results;

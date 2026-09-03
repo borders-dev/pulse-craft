@@ -82,7 +82,7 @@ Every check echoes the values it actually used under a `thresholds` key in its r
 
 The shared key also unlocks `GET /_ledge/dependencies`, which returns the installed Composer package set (`{composer: [{name, version}], generatedAt, hash}`) so the Ledge service can match your site against published security advisories. It reads Composer's runtime data rather than `composer.lock`, so it reflects what is actually deployed and omits dev packages on `--no-dev` installs. It is on by default; it exposes the same class of information the health payload's plugin check already does.
 
-The health payload includes the same `hash` as `dependenciesHash`, so the service only fetches the full package list when it changes. The path is configurable with `dependenciesPath` (default `_ledge/dependencies`), and the endpoint can be turned off with `dependenciesEnabled` / `LEDGE_DEPENDENCIES_ENABLED=false`, in which case the route is a 404 and the health payload reports `dependenciesSupported: false`.
+The health payload includes the same `hash` as `dependenciesHash`, so the service only fetches the full package list when it changes. It also carries `composerLockHash`, the SHA-256 of the raw bytes of the project's `composer.lock` (`null` when the file is absent or unreadable), so the service can tell whether what is deployed matches the lockfile committed to the linked repository. The path is configurable with `dependenciesPath` (default `_ledge/dependencies`), and the endpoint can be turned off with `dependenciesEnabled` / `LEDGE_DEPENDENCIES_ENABLED=false`, in which case the route is a 404 and both hashes are omitted from the health payload.
 
 ## Acquire (automated update testing & backups)
 

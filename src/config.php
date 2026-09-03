@@ -57,8 +57,8 @@ return [
     // 'endpointPath' => '_ledge/health',
 
     // Installed Composer package inventory for security-advisory matching.
-    // On by default; when off the route is a 404, the health payload reports
-    // `dependenciesSupported: false`, and `dependenciesHash` is omitted.
+    // On by default; when off the route is a 404 and the health payload omits
+    // `dependenciesHash` and `composerLockHash`.
     // 'dependenciesEnabled' => true,
     // 'dependenciesPath' => '_ledge/dependencies',
 

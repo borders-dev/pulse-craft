@@ -1,5 +1,11 @@
 # Release Notes for Ledge
 
+## 5.8.0 - 2026-09-03
+- Added `composerLockHash` to the health payload root: SHA-256 of the raw bytes of the project's `composer.lock`, `null` when the file is absent or unreadable. This is a deployment-drift signal for Ledge to compare against the lockfile at the linked repository's branch head; it is deliberately separate from `dependenciesHash`, which fingerprints Composer's runtime data and drives fetch-on-change. Omitted alongside `dependenciesHash` when `dependenciesEnabled` is off
+- **Breaking:** removed `dependenciesSupported` from the health payload. Presence of `dependenciesHash` is the capability signal
+- `GET /_ledge/dependencies` now returns a 503 with an `error` body when Composer's runtime data cannot be read, instead of a 500
+- Package normalization is a dedicated `DependenciesService::normalizePackages()` step and is covered by tests that pin the `dependenciesHash` for a fixed inventory
+
 ## 5.7.0 - 2026-09-03
 - Every check threshold and status level is now configurable, with a `LEDGE_*` env var fallback for each option. The annotated list of options ships as `src/config.php`; copy it to `config/ledge.php` or run `./craft ledge/publish-config` (`--force` to overwrite). Resolution order for every option: explicit config key → `LEDGE_<KEY_IN_SCREAMING_SNAKE_CASE>` env var → default. Config values may be `$VAR` references (`ledgeBaseUrl` stays file-config only)
 - Thresholds are `DegradedAt` / `UnhealthyAt` pairs, inclusive (value ≥ tier), and `null` (env: empty / `off`) disables a tier. New options, defaults matching previous behavior: `diskDegradedAt` 80 / `diskUnhealthyAt` 90 / `diskMinFreeBytes` null (new absolute floor), `memoryDegradedAt` 75 / `memoryUnhealthyAt` 90, `failedLoginsDegradedAt` 10 / `failedLoginsUnhealthyAt` 50, `formieDegradedAt` 1 / `formieUnhealthyAt` 11, `freeformDegradedAt` 1 / `freeformUnhealthyAt` 11, `queueFailedDegradedAt` null / `queueFailedUnhealthyAt` 1, `queueStaleDegradedAt` null / `queueStaleUnhealthyAt` 1. `diskSpaceThreshold` is replaced by the pair. `queueAgeThreshold` is renamed `queueStaleAfter` and `failedLoginWindow` is renamed `failedLoginsWindow` so the names line up with their `DegradedAt` / `UnhealthyAt` pairs; the old keys are no longer read

@@ -7,6 +7,7 @@ namespace ledgehq\craftledge\controllers;
 use Craft;
 use craft\web\Controller;
 use ledgehq\craftledge\Ledge;
+use Throwable;
 use yii\web\Response;
 
 class DependenciesController extends Controller
@@ -34,7 +35,14 @@ class DependenciesController extends Controller
     public function actionIndex(): Response
     {
         $dependencies = Ledge::getInstance()->dependencies;
-        $packages = $dependencies->getPackages();
+
+        try {
+            $packages = $dependencies->getPackages();
+        } catch (Throwable) {
+            Craft::$app->getResponse()->setStatusCode(503);
+
+            return $this->asJson(['error' => 'Composer runtime data is unavailable']);
+        }
 
         return $this->asJson([
             'composer' => $packages,
