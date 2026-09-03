@@ -89,6 +89,7 @@ class HealthService extends Component
             'acquireEnabled' => $settings->isAcquireEnabled(),
             'backupProfileSupported' => true,
             'dependenciesSupported' => true,
+            'dependenciesHash' => Ledge::getInstance()->dependencies->getCurrentHash(),
             'checks' => $results,
         ];
     }

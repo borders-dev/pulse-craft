@@ -13,6 +13,7 @@ use craft\web\UrlManager;
 use ledgehq\craftledge\console\controllers\DefaultController;
 use ledgehq\craftledge\models\Settings;
 use ledgehq\craftledge\services\AcquireService;
+use ledgehq\craftledge\services\DependenciesService;
 use ledgehq\craftledge\services\HealthService;
 use yii\base\Event;
 
@@ -21,6 +22,7 @@ use yii\base\Event;
  * @method Settings getSettings()
  * @property-read HealthService $health
  * @property-read AcquireService $acquire
+ * @property-read DependenciesService $dependencies
  */
 class Ledge extends Plugin
 {
@@ -33,6 +35,7 @@ class Ledge extends Plugin
             'components' => [
                 'health' => HealthService::class,
                 'acquire' => AcquireService::class,
+                'dependencies' => DependenciesService::class,
             ],
         ];
     }

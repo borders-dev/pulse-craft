@@ -4,19 +4,11 @@ declare(strict_types=1);
 
 namespace ledgehq\craftledge\controllers;
 
-use Composer\InstalledVersions;
 use Craft;
 use craft\web\Controller;
 use ledgehq\craftledge\Ledge;
 use yii\web\Response;
 
-/**
- * Installed package inventory for Ledge's security-advisory matching.
- *
- * Sourced strictly from Composer's runtime data (InstalledVersions), never a
- * lockfile: it reflects what is actually deployed, and on a production
- * `composer install --no-dev` the dev dependencies simply are not present.
- */
 class DependenciesController extends Controller
 {
     protected array|bool|int $allowAnonymous = ['index'];
@@ -43,32 +35,13 @@ class DependenciesController extends Controller
 
     public function actionIndex(): Response
     {
-        $rootPackage = InstalledVersions::getRootPackage()['name'];
-        $packages = [];
-
-        foreach (InstalledVersions::getInstalledPackages() as $name) {
-            if ($name === $rootPackage) {
-                continue;
-            }
-
-            $version = InstalledVersions::getPrettyVersion($name);
-
-            if ($version === null) {
-                continue;
-            }
-
-            $packages[] = [
-                'name' => strtolower($name),
-                'version' => ltrim($version, 'v'),
-            ];
-        }
-
-        usort($packages, static fn(array $a, array $b): int => strcmp($a['name'], $b['name']));
+        $dependencies = Ledge::getInstance()->dependencies;
+        $packages = $dependencies->getPackages();
 
         return $this->asJson([
             'composer' => $packages,
             'generatedAt' => date('c'),
-            'hash' => hash('sha256', json_encode($packages)),
+            'hash' => $dependencies->getHash($packages),
         ]);
     }
 

@@ -1,5 +1,8 @@
 # Release Notes for Ledge
 
+## 5.6.0 - 2026-09-03
+- `/health` root now includes `dependenciesHash`: the same SHA-256 that `GET /_ledge/dependencies` returns as `hash`, computed over the installed Composer package set. Ledge can compare it against the last value it stored and only fetch the full package list when it changes, instead of polling the dependencies endpoint on a schedule or inlining a few hundred packages into every health poll. `null` if the inventory cannot be read; absent on older plugin versions. Package enumeration moved to a shared `DependenciesService` so both places hash identical input
+
 ## 5.5.0 - 2026-08-28
 - The bundle manifest and `GET /_ledge/uris` now include `sites`: every Craft site as `{handle, primary, enabled, language, baseUrl, host, path}`, with `baseUrl` resolved (aliases/env vars expanded) and `host`/`path` pre-split from it (`example.com` + `/fr` for a path-mounted site, `fr.example.com` + `/` for a host-distinguished one) so a consumer can re-home sites onto sandbox hosts without re-parsing. Previously `uris` carried only a `site` handle with nothing to resolve it against, so consumers requested every URI under the primary site's host and non-primary-only pages on multi-site installs (e.g. French-only entries) showed up as 404s. Additive and absent on older plugins; the `sites` fact is omitted (never emitted empty) on enumeration failure the same way `uris` is, and consumers must treat absence as single-site
 

@@ -45,6 +45,12 @@ The health endpoint can then be accessed by including the key in the `X-Ledge-Ke
 curl -H "X-Ledge-Key: your-secret-key" https://your-site.com/_ledge/health
 ```
 
+## Dependencies
+
+The shared key also unlocks `GET /_ledge/dependencies`, which returns the installed Composer package set (`{composer: [{name, version}], generatedAt, hash}`) so the Ledge service can match your site against published security advisories. It reads Composer's runtime data rather than `composer.lock`, so it reflects what is actually deployed and omits dev packages on `--no-dev` installs. This endpoint is always on; it exposes the same information the health payload's plugin check already does.
+
+The health payload includes the same `hash` as `dependenciesHash`, so the service only fetches the full package list when it changes. The path is configurable with `dependenciesPath` (default `_ledge/dependencies`).
+
 ## Acquire (automated update testing & backups)
 
 Beyond `/health`, Ledge can act as an **acquisition agent**: on a signed command from the Ledge service, the plugin produces an encrypted bundle of the site (a database dump — plus an environment + crawlable-URL manifest for update-test runs) and uploads it to object storage. This powers automated "does this update break the site?" testing and scheduled database backups.
